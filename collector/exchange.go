@@ -3,91 +3,65 @@
 package collector
 
 import (
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"github.com/StackExchange/wmi"
 	prom "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/common/log"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 const (
-	Subsystem  string = "exchange"
-	MSE2019 exver  = 2019
-	MSE2016 exver  = 2016
-	MSE2013 exver  = 2013
+	Subsystem string = "exchange"
+	MSE2019   exver  = 2019
+	MSE2016   exver  = 2016
+	MSE2013   exver  = 2013
 )
 
 var (
 	argOverrideVersion = kingpin.Flag("collector.exchange.version", "Override exchange version (2016, 2013, ...)")
-	argFoobar = kingpin.Flag("collector.exchange.foobar", "Foorbar baz...)")
-	argBarfoo = kingpin.Flag("collector.exchange.barfoo", "Barfoo fight")
+	argFoobar          = kingpin.Flag("collector.exchange.foobar", "Foorbar baz...)")
+	argBarfoo          = kingpin.Flag("collector.exchange.barfoo", "Barfoo fight")
 )
 
 type exver int
 
 // ExchangeCollector is a prom.collector for Exchange metrics
 type ExchangeCollector struct {
-	// MajorVersion (defaults to Ex2016 for now)
 	Version exver
 
-	// Win32_PerfRawData_PerfOS_Processor
-	PercentProcessorTime  *prom.Desc
-	PercentUserTime       *prom.Desc
-	PercentPrivilegedTime *prom.Desc
-
-	// Win32_PerfFormattedData_PerfOS_System
-	ProcessorQueueLength *prom.Desc
-
-	// Win32_PerfRawData_PerfOS_Memory
-	AvailableMbytes                 *prom.Desc
-	PoolPagedBytes                  *prom.Desc
-	TransitionPagesRePurposedPerSec *prom.Desc
-	PageReadsPerSec                 *prom.Desc
-	PagesPerSec                     *prom.Desc
-	PagesInputPerSec                *prom.Desc
-	PagesOutputPerSec               *prom.Desc
-
-	// Win32_LogicalDisk
-	FreeSpace *prom.Desc
-
-	// Win32_PerfRawData_PerfDisk_LogicalDisk
-	AvgDiskSecPerRead     *prom.Desc
-	AvgDiskSecPerWrite    *prom.Desc
-	AvgDiskSecPerTransfer *prom.Desc
-
-	// Win32_PerfRawData_Tcpip_NetworkInterface
-	PacketsOutboundErrors *prom.Desc
-
-	// Win32_PerfRawData_Tcpip_TCPv4
-	ConnectionsResetTCPv4 *prom.Desc
-
-	// Win32_PerfRawData_Tcpip_TCPv6
-	ConnectionsResetTCPv6 *prom.Desc
-
-	// Win32_PerfRawData_ASPNET_ASPNET
-	ApplicationRestarts   *prom.Desc
-	WorkerProcessRestarts *prom.Desc
-	RequestsCurrent       *prom.Desc
-	RequestWaitTime       *prom.Desc
-
-	// Win32_PerfRawData_ASPNET_ASPNETApplications
-	RequestsInApplicationQueue *prom.Desc
-
-	// Win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControllers
-	// Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses
-	LDAPReadTime                         *prom.Desc
-	LDAPSearchTime                       *prom.Desc
-	LDAPSearchesTimedOutPerMin           *prom.Desc
-	LongRunningLDAPOperationsPerMin      *prom.Desc
-	LDAPSearchesTimedLimitExceededPerMin *prom.Desc
-
-
-	// Win32_PerfRawData_MSExchangeRpcClientAccess_MSExchangeRpcClientAccess
-	RPCAveragedLatency  *prom.Desc
-	RPCRequests         *prom.Desc
-	ActiveUserCount     *prom.Desc
-	ConnectionCount     *prom.Desc
-	RPCOperationsPerSec *prom.Desc
-	UserCount           *prom.Desc
-
-	// Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues
+	PercentProcessorTime                    *prom.Desc
+	PercentUserTime                         *prom.Desc
+	PercentPrivilegedTime                   *prom.Desc
+	ProcessorQueueLength                    *prom.Desc
+	AvailableMbytes                         *prom.Desc
+	PoolPagedBytes                          *prom.Desc
+	TransitionPagesRePurposedPerSec         *prom.Desc
+	PageReadsPerSec                         *prom.Desc
+	PagesPerSec                             *prom.Desc
+	PagesInputPerSec                        *prom.Desc
+	PagesOutputPerSec                       *prom.Desc
+	FreeSpace                               *prom.Desc
+	AvgDiskSecPerRead                       *prom.Desc
+	AvgDiskSecPerWrite                      *prom.Desc
+	AvgDiskSecPerTransfer                   *prom.Desc
+	PacketsOutboundErrors                   *prom.Desc
+	ConnectionsResetTCPv4                   *prom.Desc
+	ConnectionsResetTCPv6                   *prom.Desc
+	ApplicationRestarts                     *prom.Desc
+	WorkerProcessRestarts                   *prom.Desc
+	RequestsCurrent                         *prom.Desc
+	RequestWaitTime                         *prom.Desc
+	RequestsInApplicationQueue              *prom.Desc
+	LDAPReadTime                            *prom.Desc
+	LDAPSearchTime                          *prom.Desc
+	LDAPSearchesTimedOutPerMin              *prom.Desc
+	LongRunningLDAPOperationsPerMin         *prom.Desc
+	LDAPSearchesTimedLimitExceededPerMin    *prom.Desc
+	RPCAveragedLatency                      *prom.Desc
+	RPCRequests                             *prom.Desc
+	ActiveUserCount                         *prom.Desc
+	ConnectionCount                         *prom.Desc
+	RPCOperationsPerSec                     *prom.Desc
+	UserCount                               *prom.Desc
 	ExternalActiveRemoteDeliveryQueueLength *prom.Desc
 	InternalActiveRemoteDeliveryQueueLength *prom.Desc
 	ActiveMailboxDeliveryQueueLength        *prom.Desc
@@ -96,49 +70,41 @@ type ExchangeCollector struct {
 	ExternalLargestDeliveryQueueLength      *prom.Desc
 	InternalLargestDeliveryQueueLength      *prom.Desc
 	PoisonQueueLength                       *prom.Desc
-
-	// Win32_PerfRawData_MSExchangeHttpProxy_MSExchangeHttpProxy
-	MailboxServerLocatorAverageLatency *prom.Desc
-	AverageAuthenticationLatency       *prom.Desc
-	MailboxServerProxyFailureRate      *prom.Desc
-	OutstandingProxyRequests           *prom.Desc
-	ProxyRequestsPerSec                *prom.Desc
-	RequestsPerSec                     *prom.Desc
-
-	// Win32_PerfRawData_MSExchangeActiveSync_MSExchangeActiveSync
-	RequestsPerSec      *prom.Desc
-	PingCommandsPending *prom.Desc
-	SyncCommandsPerSec  *prom.Desc
-
-	// Win32_PerfRawData_MSExchangeAvailabilityService_MSExchangeAvailabilityService
-	AvailabilityRequestssec *prom.Desc
-
-	// Win32_PerfRawData_MSExchangeOWA_MSExchangeOWA
-	CurrentUniqueUsers *prom.Desc
-	RequestsPerSec     *prom.Desc
-
-	// Win32_PerfRawData_MSExchangeAutodiscover_MSExchangeAutodiscover
-	RequestsPerSec *prom.Desc
-
-	// Win32_PerfRawData_MSExchangeWorkloadManagementWorkloads_MSExchangeWorkloadManagementWorkloads
-	ActiveTasks    *prom.Desc
-	CompletedTasks *prom.Desc
-	QueuedTasks    *prom.Desc
-
-	// Win32_PerfRawData_ESE_MSExchangeDatabaseInstances
-	IODatabaseReadsAverageLatency          *prom.Desc
-	IODatabaseWritesAverageLatency         *prom.Desc
-	IOLogWritesAverageLatency              *prom.Desc
-	IODatabaseReadsRecoveryAverageLatency  *prom.Desc
-	IODatabaseWritesRecoveryAverageLatency *prom.Desc
+	MailboxServerLocatorAverageLatency      *prom.Desc
+	AverageAuthenticationLatency            *prom.Desc
+	MailboxServerProxyFailureRate           *prom.Desc
+	OutstandingProxyRequests                *prom.Desc
+	ProxyRequestsPerSec                     *prom.Desc
+	RequestsPerSec                          *prom.Desc
+	PingCommandsPending                     *prom.Desc
+	SyncCommandsPerSec                      *prom.Desc
+	AvailabilityRequestssec                 *prom.Desc
+	CurrentUniqueUsers                      *prom.Desc
+	ActiveTasks                             *prom.Desc
+	CompletedTasks                          *prom.Desc
+	QueuedTasks                             *prom.Desc
+	IODatabaseReadsAverageLatency           *prom.Desc
+	IODatabaseWritesAverageLatency          *prom.Desc
+	IOLogWritesAverageLatency               *prom.Desc
+	IODatabaseReadsRecoveryAverageLatency   *prom.Desc
+	IODatabaseWritesRecoveryAverageLatency  *prom.Desc
 }
 
 func init() {
 	Factories[Subsystem] = NewExchangeCollector
 }
 
-// NewExchangeCollector creates a new ExchangeCollector 
-func NewExchangeCollector() (ExchangeCollector, error) {
+// Collect sends the metric values for each metric to the provided prometheus Metric channel
+func (c *ExchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prom.Metric) error {
+	if desc, err := c.collect(ch); err != nil {
+		log.Error("failed collecting Exchange metrics:", desc, err)
+		return err
+	}
+	return nil
+}
+
+// NewExchangeCollector creates a new ExchangeCollector
+func NewExchangeCollector() (Collector, error) {
 	exCollector := ExchangeCollector{
 		PercentProcessorTime: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "cpu_time_total"),
@@ -150,251 +116,276 @@ func NewExchangeCollector() (ExchangeCollector, error) {
 		),
 		PercentPrivilegedTime: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "cpu_time_total"),
-			"Total percent privilege time",	[]string{"mode"}, nil,
+			"Total percent privilege time", []string{"mode"}, nil,
 		),
 		ProcessorQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
 			"(descr)", []string{}, nil,
-		},
-		LDAPReadTime: prom.Desc(
+		),
+		LDAPReadTime: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		LDAPSearchTime: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		LDAPSearchTime: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		LDAPSearchesTimedOutPerMin: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		LDAPSearchesTimedOutPerMin: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		LongRunningLDAPOperationsPerMin: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		LongRunningLDAPOperationsPerMin: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		LDAPSearchesTimedLimitExceededPerMin: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		LDAPSearchesTimedLimitExceededPerMin: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		AvailableMbytes: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		AvailableMbytes: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		PoolPagedBytes: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		PoolPagedBytes: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		TransitionPagesRePurposedPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		TransitionPagesRePurposedPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		PageReadsPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		PageReadsPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		PagesPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		PagesPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		PagesInputPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		PagesInputPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		PagesOutputPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		PagesOutputPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		FreeSpace: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		FreeSpace: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		AvgDiskSecPerRead: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		AvgDiskSecPerRead: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		AvgDiskSecPerWrite: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		AvgDiskSecPerWrite: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		AvgDiskSecPerTransfer: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		AvgDiskSecPerTransfer: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		PacketsOutboundErrors: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		PacketsOutboundErrors: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ConnectionsResetTCPv4: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ConnectionsResetTCPv4: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ConnectionsResetTCPv6: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ConnectionsResetTCPv6: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RPCAveragedLatency: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		RPCAveragedLatency: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RPCRequests: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		RPCRequests: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ActiveUserCount: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ActiveUserCount: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ConnectionCount: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ConnectionCount: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RPCOperationsPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		RPCOperationsPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		UserCount: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		UserCount: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ExternalActiveRemoteDeliveryQueueLength: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ExternalActiveRemoteDeliveryQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		InternalActiveRemoteDeliveryQueueLength: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		InternalActiveRemoteDeliveryQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ActiveMailboxDeliveryQueueLength: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ActiveMailboxDeliveryQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RetryMailboxDeliveryQueueLength: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		RetryMailboxDeliveryQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		UnreachableQueueLength: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		UnreachableQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ExternalLargestDeliveryQueueLength: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ExternalLargestDeliveryQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		InternalLargestDeliveryQueueLength: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		InternalLargestDeliveryQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		PoisonQueueLength: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		PoisonQueueLength: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ApplicationRestarts: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ApplicationRestarts: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		WorkerProcessRestarts: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		WorkerProcessRestarts: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RequestsCurrent: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		RequestsCurrent: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RequestWaitTime: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		RequestWaitTime: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RequestsInApplicationQueue: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		RequestsInApplicationQueue: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		MailboxServerLocatorAverageLatency: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		MailboxServerLocatorAverageLatency: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		AverageAuthenticationLatency: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		AverageAuthenticationLatency: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		MailboxServerProxyFailureRate: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		MailboxServerProxyFailureRate: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		OutstandingProxyRequests: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		OutstandingProxyRequests: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ProxyRequestsPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ProxyRequestsPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RequestsPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		RequestsPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RequestsPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		PingCommandsPending: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		PingCommandsPending: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		SyncCommandsPerSec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		SyncCommandsPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		AvailabilityRequestssec: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		AvailabilityRequestssec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		CurrentUniqueUsers: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		CurrentUniqueUsers: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		ActiveTasks: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RequestsPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		CompletedTasks: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		RequestsPerSec: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		QueuedTasks: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		ActiveTasks: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		IODatabaseReadsAverageLatency: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		CompletedTasks: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		IODatabaseWritesAverageLatency: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		QueuedTasks: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		IOLogWritesAverageLatency: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		IODatabaseReadsAverageLatency: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		IODatabaseReadsRecoveryAverageLatency: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		IODatabaseWritesAverageLatency: prom.Desc(
+			"(descr)", nil, nil,
+		),
+		IODatabaseWritesRecoveryAverageLatency: prom.NewDesc(
 			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		IOLogWritesAverageLatency: prom.Desc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		IODatabaseReadsRecoveryAverageLatency: prom.Desc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
-		IODatabaseWritesRecoveryAverageLatency: prom.Desc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
-			"(descr)", []string{}, nil,
-		},
+			"(descr)", nil, nil,
+		),
 	}
 
 	return &exCollector, nil
+}
+
+func (c *ExchangeCollector) collect(ch chan<- prom.Metric) (*prom.Desc, error) {
+
+	var dstADAccess []Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses
+	if err := wmi.Query(queryAll(dstADAccess), &dstADAccess); err != nil {
+		return nil, err
+	}
+	for _, app := range dstADAccess {
+		ch <- prom.MustNewConstMetric(
+			c.LDAPReadTime,
+			prom.GaugeValue,
+			float64(app.LDAPReadTime),
+		)
+		ch <- prom.MustNewConstMetric(
+			c.LDAPSearchTime,
+			prom.GaugeValue,
+			float64(app.LDAPSearchTime),
+		)
+		ch <- prom.MustNewConstMetric(
+			c.LDAPSearchesTimedOutPerMin,
+			prom.GaugeValue,
+			float64(app.LongRunningLDAPOperationsPerMin),
+		)
+		ch <- prom.MustNewConstMetric(
+			c.LongRunningLDAPOperationsPerMin,
+			prom.GaugeValue,
+			float64(app.LDAPSearchesTimedOutPerMin),
+		)
+		ch <- prom.MustNewConstMetric(
+			c.LDAPSearchesTimedLimitExceededPerMin,
+			prom.GaugeValue,
+			float64(app.LDAPSearchesTimedLimitExceededPerMin),
+		)
+	}
+
+	return nil, nil
 }
 
 // All WMI Class definitions have the wrong type  !!
@@ -404,14 +395,18 @@ type placeholder uint64
 // Exchange WMI Classes
 //
 type Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses struct {
-	LDAPReadTime                         placeholder
-	LDAPSearchTime                       placeholder
-	LDAPSearchesTimedOutPerMin           placeholder
-	LongRunningLDAPOperationsPerMin      placeholder
-	LDAPSearchesTimedLimitExceededPerMin placeholder
+	Name string
+
+	LDAPReadTime                         uint64
+	LDAPSearchTime                       uint64
+	LDAPSearchesTimedOutPerMin           uint64
+	LongRunningLDAPOperationsPerMin      uint64
+	LDAPSearchesTimedLimitExceededPerMin uint64
 }
 
 type Win32_PerfRawData_MSExchangeRpcClientAccess_MSExchangeRpcClientAccess struct {
+	Name string
+
 	RPCAveragedLatency  placeholder
 	RPCRequests         placeholder
 	ActiveUserCount     placeholder
@@ -421,6 +416,8 @@ type Win32_PerfRawData_MSExchangeRpcClientAccess_MSExchangeRpcClientAccess struc
 }
 
 type Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues struct {
+	Name string
+
 	ExternalActiveRemoteDeliveryQueueLength placeholder
 	InternalActiveRemoteDeliveryQueueLength placeholder
 	ActiveMailboxDeliveryQueueLength        placeholder
@@ -431,6 +428,8 @@ type Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues struc
 	PoisonQueueLength                       placeholder
 }
 type Win32_PerfRawData_MSExchangeHttpProxy_MSExchangeHttpProxy struct {
+	Name string
+
 	MailboxServerLocatorAverageLatency placeholder
 	AverageAuthenticationLatency       placeholder
 	MailboxServerProxyFailureRate      placeholder
@@ -440,31 +439,43 @@ type Win32_PerfRawData_MSExchangeHttpProxy_MSExchangeHttpProxy struct {
 }
 
 type Win32_PerfRawData_MSExchangeActiveSync_MSExchangeActiveSync struct {
+	Name string
+
 	RequestsPerSec      placeholder
 	PingCommandsPending placeholder
 	SyncCommandsPerSec  placeholder
 }
 
 type Win32_PerfRawData_MSExchangeAvailabilityService_MSExchangeAvailabilityService struct {
+	Name string
+
 	AvailabilityRequestssec placeholder
 }
 
 type Win32_PerfRawData_MSExchangeOWA_MSExchangeOWA struct {
+	Name string
+
 	CurrentUniqueUsers placeholder
 	RequestsPerSec     placeholder
 }
 
 type Win32_PerfRawData_MSExchangeAutodiscover_MSExchangeAutodiscover struct {
+	Name string
+
 	RequestsPerSec placeholder
 }
 
 type Win32_PerfRawData_MSExchangeWorkloadManagementWorkloads_MSExchangeWorkloadManagementWorkloads struct {
+	Name string
+
 	ActiveTasks    placeholder
 	CompletedTasks placeholder
 	QueuedTasks    placeholder
 }
 
 type Win32_PerfRawData_ESE_MSExchangeDatabaseInstances struct {
+	Name string
+
 	IODatabaseReadsAverageLatency          placeholder
 	IODatabaseWritesAverageLatency         placeholder
 	IOLogWritesAverageLatency              placeholder
@@ -475,17 +486,24 @@ type Win32_PerfRawData_ESE_MSExchangeDatabaseInstances struct {
 //
 // General WMI Classes
 //
+/*
 type Win32_PerfRawData_PerfOS_Processor struct {
+	Name string
+
 	PercentProcessorTime  placeholder
 	PercentUserTime       placeholder
 	PercentPrivilegedTime placeholder
 }
 
 type Win32_PerfFormattedData_PerfOS_System struct {
+	Name string
+
 	ProcessorQueueLength placeholder
 }
 
 type Win32_PerfRawData_PerfOS_Memory struct {
+	Name string
+
 	AvailableMbytes                 placeholder
 	PoolPagedBytes                  placeholder
 	TransitionPagesRePurposedPerSec placeholder
@@ -496,28 +514,40 @@ type Win32_PerfRawData_PerfOS_Memory struct {
 }
 
 type Win32_LogicalDisk struct {
+	Name string
+
 	FreeSpace placeholder
 }
 
 type Win32_PerfRawData_PerfDisk_LogicalDisk struct {
+	Name string
+
 	AvgDiskSecPerRead     placeholder
 	AvgDiskSecPerWrite    placeholder
 	AvgDiskSecPerTransfer placeholder
 }
 
 type Win32_PerfRawData_Tcpip_NetworkInterface struct {
+	Name string
+
 	PacketsOutboundErrors placeholder
 }
 
 type Win32_PerfRawData_Tcpip_TCPv4 struct {
+	Name string
+
 	ConnectionsResetTCPv4 placeholder
 }
 
 type Win32_PerfRawData_Tcpip_TCPv6 struct {
+	Name string
+
 	ConnectionsResetTCPv6 placeholder
 }
 
 type Win32_PerfRawData_ASPNET_ASPNET struct {
+	Name string
+
 	ApplicationRestarts   placeholder
 	WorkerProcessRestarts placeholder
 	RequestsCurrent       placeholder
@@ -525,6 +555,8 @@ type Win32_PerfRawData_ASPNET_ASPNET struct {
 }
 
 type Win32_PerfRawData_ASPNET_ASPNETApplications struct {
+	Name string
+
 	RequestsInApplicationQueue placeholder
 }
-
+*/
