@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	Subsystem string = "exchange"
+	subsystem string = "exchange"
 	MSE2019   exver  = 2019
 	MSE2016   exver  = 2016
 	MSE2013   exver  = 2013
@@ -18,13 +18,12 @@ const (
 
 var (
 	argOverrideVersion = kingpin.Flag("collector.exchange.version", "Override exchange version (2016, 2013, ...)")
-	argFoobar          = kingpin.Flag("collector.exchange.foobar", "Foorbar baz...)")
-	argBarfoo          = kingpin.Flag("collector.exchange.barfoo", "Barfoo fight")
+	argFoobar          = kingpin.Flag("collector.exchange.foobar", "foobar")
 )
 
 type exver int
 
-// ExchangeCollector is a prom.collector for Exchange metrics
+// ExchangeCollector collects Exchange metrics
 type ExchangeCollector struct {
 	Version exver
 
@@ -91,7 +90,7 @@ type ExchangeCollector struct {
 }
 
 func init() {
-	Factories[Subsystem] = NewExchangeCollector
+	Factories[subsystem] = NewExchangeCollector
 }
 
 // Collect sends the metric values for each metric to the provided prometheus Metric channel
@@ -107,243 +106,243 @@ func (c *ExchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prom.Metric) e
 func NewExchangeCollector() (Collector, error) {
 	exCollector := ExchangeCollector{
 		PercentProcessorTime: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "cpu_time_total"),
+			prom.BuildFQName(Namespace, subsystem, "cpu_time_total"),
 			"Total percent processor time", []string{"mode"}, nil,
 		),
 		PercentUserTime: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "cpu_time_total"),
+			prom.BuildFQName(Namespace, subsystem, "cpu_time_total"),
 			"Total percent user time", []string{"mode"}, nil,
 		),
 		PercentPrivilegedTime: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "cpu_time_total"),
+			prom.BuildFQName(Namespace, subsystem, "cpu_time_total"),
 			"Total percent privilege time", []string{"mode"}, nil,
 		),
 		ProcessorQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", []string{}, nil,
 		),
 		LDAPReadTime: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		LDAPSearchTime: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		LDAPSearchesTimedOutPerMin: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		LongRunningLDAPOperationsPerMin: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		LDAPSearchesTimedLimitExceededPerMin: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		AvailableMbytes: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		PoolPagedBytes: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		TransitionPagesRePurposedPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		PageReadsPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		PagesPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		PagesInputPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		PagesOutputPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		FreeSpace: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		AvgDiskSecPerRead: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		AvgDiskSecPerWrite: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		AvgDiskSecPerTransfer: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		PacketsOutboundErrors: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ConnectionsResetTCPv4: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ConnectionsResetTCPv6: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		RPCAveragedLatency: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		RPCRequests: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ActiveUserCount: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ConnectionCount: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		RPCOperationsPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		UserCount: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ExternalActiveRemoteDeliveryQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		InternalActiveRemoteDeliveryQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ActiveMailboxDeliveryQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		RetryMailboxDeliveryQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		UnreachableQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ExternalLargestDeliveryQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		InternalLargestDeliveryQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		PoisonQueueLength: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ApplicationRestarts: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		WorkerProcessRestarts: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		RequestsCurrent: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		RequestWaitTime: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		RequestsInApplicationQueue: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		MailboxServerLocatorAverageLatency: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		AverageAuthenticationLatency: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		MailboxServerProxyFailureRate: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		OutstandingProxyRequests: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ProxyRequestsPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		RequestsPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		PingCommandsPending: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		SyncCommandsPerSec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		AvailabilityRequestssec: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		CurrentUniqueUsers: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		ActiveTasks: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		CompletedTasks: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		QueuedTasks: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		IODatabaseReadsAverageLatency: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		IODatabaseWritesAverageLatency: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		IOLogWritesAverageLatency: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		IODatabaseReadsRecoveryAverageLatency: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 		IODatabaseWritesRecoveryAverageLatency: prom.NewDesc(
-			prom.BuildFQName(Namespace, Subsystem, "foo"),
+			prom.BuildFQName(Namespace, subsystem, "foo"),
 			"(descr)", nil, nil,
 		),
 	}
@@ -352,7 +351,6 @@ func NewExchangeCollector() (Collector, error) {
 }
 
 func (c *ExchangeCollector) collect(ch chan<- prom.Metric) (*prom.Desc, error) {
-
 	var dstADAccess []Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses
 	if err := wmi.Query(queryAll(dstADAccess), &dstADAccess); err != nil {
 		return nil, err
