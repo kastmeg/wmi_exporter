@@ -17,8 +17,8 @@ const (
 )
 
 var (
-	argOverrideVersion = kingpin.Flag("collector.exchange.version", "Override exchange version (2016, 2013, ...)")
-	argFoobar          = kingpin.Flag("collector.exchange.foobar", "foobar")
+	argOverrideVersion = kingpin.Flag("collector.exchange.version", "Override exchange version (2016, 2013, ...)").String()
+	argFoobar          = kingpin.Flag("collector.exchange.foobar", "foobar").String()
 )
 
 type exver int
