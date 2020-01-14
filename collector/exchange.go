@@ -10,9 +10,6 @@ import (
 
 const subsystem string = "exchange"
 
-// placeholder values should be replaced
-type placeholder uint64
-
 type exchangeCollector struct {
 	LDAPReadTime   *prometheus.Desc
 	LDAPSearchTime *prometheus.Desc
@@ -58,24 +55,24 @@ type win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControll
 type win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues struct {
 	Name string
 
-	ExternalActiveRemoteDeliveryQueueLength placeholder
-	InternalActiveRemoteDeliveryQueueLength placeholder
-	ActiveMailboxDeliveryQueueLength        placeholder
-	RetryMailboxDeliveryQueueLength         placeholder
-	UnreachableQueueLength                  placeholder
-	ExternalLargestDeliveryQueueLength      placeholder
-	InternalLargestDeliveryQueueLength      placeholder
-	PoisonQueueLength                       placeholder
+	ExternalActiveRemoteDeliveryQueueLength uint64
+	InternalActiveRemoteDeliveryQueueLength uint64
+	ActiveMailboxDeliveryQueueLength        uint64
+	RetryMailboxDeliveryQueueLength         uint64
+	UnreachableQueueLength                  uint64
+	ExternalLargestDeliveryQueueLength      uint64
+	InternalLargestDeliveryQueueLength      uint64
+	PoisonQueueLength                       uint64
 }
 
 type win32_PerfRawData_ESE_MSExchangeDatabaseInstances struct {
 	Name string
 
-	IODatabaseReadsAverageLatency          placeholder
-	IODatabaseWritesAverageLatency         placeholder
-	IOLogWritesAverageLatency              placeholder
-	IODatabaseReadsRecoveryAverageLatency  placeholder
-	IODatabaseWritesRecoveryAverageLatency placeholder
+	IODatabaseReadsAverageLatency          uint64
+	IODatabaseWritesAverageLatency         uint64
+	IOLogWritesAverageLatency              uint64
+	IODatabaseReadsRecoveryAverageLatency  uint64
+	IODatabaseWritesRecoveryAverageLatency uint64
 }
 
 func init() {
