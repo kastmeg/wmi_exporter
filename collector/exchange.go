@@ -13,17 +13,14 @@ const subsystem string = "exchange"
 // placeholder values should be replaced
 type placeholder uint64
 
-type ExchangeCollector struct {
-	// Class: Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses
+type exchangeCollector struct {
 	LDAPReadTime   *prometheus.Desc
 	LDAPSearchTime *prometheus.Desc
 
-	// Class: Win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControllers
 	LDAPSearchesTimedOutperMinute          *prometheus.Desc
 	LongRunningLDAPOperationsPermin        *prometheus.Desc
 	LDAPSearchesTimeLimitExceededperMinute *prometheus.Desc
 
-	// Class: Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues
 	ExternalActiveRemoteDeliveryQueueLength *prometheus.Desc
 	InternalActiveRemoteDeliveryQueueLength *prometheus.Desc
 	ActiveMailboxDeliveryQueueLength        *prometheus.Desc
@@ -33,7 +30,6 @@ type ExchangeCollector struct {
 	InternalLargestDeliveryQueueLength      *prometheus.Desc
 	PoisonQueueLength                       *prometheus.Desc
 
-	// Class: Win32_PerfRawData_ESE_MSExchangeDatabaseInstances
 	IODatabaseReadsAverageLatency          *prometheus.Desc
 	IODatabaseWritesAverageLatency         *prometheus.Desc
 	IOLogWritesAverageLatency              *prometheus.Desc
@@ -41,8 +37,7 @@ type ExchangeCollector struct {
 	IODatabaseWritesRecoveryAverageLatency *prometheus.Desc
 }
 
-// Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses uses reflection
-type Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses struct {
+type win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses struct {
 	Name string
 
 	LDAPReadTime                           uint64
@@ -52,8 +47,7 @@ type Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses struct {
 	LDAPSearchesTimeLimitExceededperMinute uint64
 }
 
-// Win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControllers uses reflection
-type Win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControllers struct {
+type win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControllers struct {
 	Name string
 
 	LDAPSearchesTimedOutperMinute          uint64
@@ -61,8 +55,7 @@ type Win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControll
 	LDAPSearchesTimeLimitExceededperMinute uint64
 }
 
-// Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues  uses reflection
-type Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues struct {
+type win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues struct {
 	Name string
 
 	ExternalActiveRemoteDeliveryQueueLength placeholder
@@ -75,8 +68,7 @@ type Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues struc
 	PoisonQueueLength                       placeholder
 }
 
-// Win32_PerfRawData_ESE_MSExchangeDatabaseInstances  uses reflection
-type Win32_PerfRawData_ESE_MSExchangeDatabaseInstances struct {
+type win32_PerfRawData_ESE_MSExchangeDatabaseInstances struct {
 	Name string
 
 	IODatabaseReadsAverageLatency          placeholder
@@ -87,13 +79,12 @@ type Win32_PerfRawData_ESE_MSExchangeDatabaseInstances struct {
 }
 
 func init() {
-	Factories[subsystem] = NewExchangeCollector
+	Factories[subsystem] = newExchangeCollector
 }
 
-// NewExchangeCollector returns a new Collector
-func NewExchangeCollector() (Collector, error) {
-	return &ExchangeCollector{
-		// Class: Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses
+// newExchangeCollector returns a new Collector
+func newExchangeCollector() (Collector, error) {
+	return &exchangeCollector{
 		LDAPReadTime: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "ldap_read_time"),
 			"LDAP Read Time", []string{}, nil,
@@ -102,8 +93,6 @@ func NewExchangeCollector() (Collector, error) {
 			prometheus.BuildFQName(Namespace, subsystem, "ldap_search_time"),
 			"LDAP Search Time", []string{}, nil,
 		),
-
-		// Class: Win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControllers
 		LDAPSearchesTimedOutperMinute: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "ldap_searches_timed_out_per_min"),
 			"LDAP Searches timeout pr minute", []string{}, nil,
@@ -116,13 +105,10 @@ func NewExchangeCollector() (Collector, error) {
 			prometheus.BuildFQName(Namespace, subsystem, "ldap_searches_timed_out_per_min"),
 			"LDAP Searches Time Limit Exceeded pr minute", []string{}, nil,
 		),
-
-		// Class: Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues
 		ExternalActiveRemoteDeliveryQueueLength: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "ext_active_remote_delivery_queue"),
 			"External Active Remote Delivery Queue Length", []string{}, nil,
 		),
-
 		InternalActiveRemoteDeliveryQueueLength: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "internal_active_remote_delivery_queue"),
 			"Internal Active Remote Delivery Queue Length", []string{}, nil,
@@ -154,23 +140,16 @@ func NewExchangeCollector() (Collector, error) {
 	}, nil
 }
 
-// Collect sends
-func (c *ExchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) error {
-	if desc, err := c.collect(ch); err != nil {
-		log.Error("failed collecting Exchange metrics:", desc, err)
-		return err
-	}
-	return nil
-}
-
-func (c *ExchangeCollector) collect(ch chan<- prometheus.Metric) (*prometheus.Desc, error) {
+// Collect collects Exchange-metrics and provides them to prometheus through the ch channel
+func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) error {
 	{
-		var dst []Win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses
-		if err := wmi.Query(queryAll(dst), &dst); err != nil {
-			return nil, err
+		var data []win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses
+		if err := wmi.Query(queryAll(data), &data); err != nil {
+			log.Errorf("WMI query error while collecting %s-metrics: %s", subsystem, err)
+			return err
 		}
 
-		for _, app := range dst {
+		for _, app := range data {
 			ch <- prometheus.MustNewConstMetric(
 				c.LDAPReadTime,
 				prometheus.CounterValue,
@@ -186,12 +165,13 @@ func (c *ExchangeCollector) collect(ch chan<- prometheus.Metric) (*prometheus.De
 	}
 
 	{
-		var dst []Win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControllers
-		if err := wmi.Query(queryAll(dst), &dst); err != nil {
-			return nil, err
+		var data []win32_PerfFormattedData_MSExchangeADAccess_MSExchangeADAccessDomainControllers
+		if err := wmi.Query(queryAll(data), &data); err != nil {
+			log.Errorf("WMI query error while collecting %s-metrics: %s", subsystem, err)
+			return err
 		}
 
-		for _, app := range dst {
+		for _, app := range data {
 			ch <- prometheus.MustNewConstMetric(
 				c.LDAPSearchesTimedOutperMinute,
 				prometheus.CounterValue,
@@ -211,12 +191,13 @@ func (c *ExchangeCollector) collect(ch chan<- prometheus.Metric) (*prometheus.De
 	}
 
 	{
-		var dst []Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues
-		if err := wmi.Query(queryAll(dst), &dst); err != nil {
-			return nil, err
+		var data []win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues
+		if err := wmi.Query(queryAll(data), &data); err != nil {
+			log.Errorf("WMI query error while collecting %s-metrics: %s", subsystem, err)
+			return err
 		}
 
-		for _, app := range dst {
+		for _, app := range data {
 			ch <- prometheus.MustNewConstMetric(
 				c.ExternalActiveRemoteDeliveryQueueLength,
 				prometheus.CounterValue,
@@ -259,5 +240,6 @@ func (c *ExchangeCollector) collect(ch chan<- prometheus.Metric) (*prometheus.De
 			)
 		}
 	}
-	return nil, nil
+
+	return nil
 }
