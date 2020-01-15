@@ -7,10 +7,11 @@ import (
 	"github.com/StackExchange/wmi"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	"strconv"
 )
 
 // proctestCollector collects process IO data rates
-type proctestCollector struct {
+type ProctestCollector struct {
 	IOReadBytesPersec  *prometheus.Desc
 	IOWriteBytesPersec *prometheus.Desc
 	PrivateBytes       *prometheus.Desc
@@ -18,86 +19,107 @@ type proctestCollector struct {
 	ThreadCount        *prometheus.Desc
 }
 
-type win32_PerfRawData_PerfProc_Process struct {
-	Name string
-
-	IOReadBytesPersec  uint64
-	IOWriteBytesPersec uint64
-	PrivateBytes       uint64
-	PageFaultsPersec   uint64
-	ThreadCount        uint64
-}
-
 func init() {
-	Factories["proctest"] = newProctestCollector
+	Factories["proctest"] = NewProctestCollector
 }
 
-func newProctestCollector() (Collector, error) {
-	return &proctestCollector{
+// NewProctestCollector ...
+func NewProctestCollector() (Collector, error) {
+	return &ProctestCollector{
 		IOReadBytesPersec: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, "proctest", "proctest_io_read_bytes_persec"),
-			"IO read bytes/s", []string{}, nil,
+			prometheus.BuildFQName(Namespace, "proctest", "io_read_bytes_persec"),
+			"IO read bytes/s",
+			[]string{"process", "process_id"},
+			nil,
 		),
 		IOWriteBytesPersec: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, "proctest", "proctest_io_write_bytes_persec"),
-			"IO write bytes/s", []string{}, nil,
+			prometheus.BuildFQName(Namespace, "proctest", "io_write_bytes_persec"),
+			"IO write bytes/s",
+			[]string{"process", "process_id"},
+			nil,
 		),
 
 		PrivateBytes: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, "proctest", "proctest_private_bytes"),
-			"IO read bytes/s", []string{}, nil,
+			prometheus.BuildFQName(Namespace, "proctest", "private_bytes"),
+			"IO read bytes/s",
+			[]string{"process", "process_id"},
+			nil,
 		),
 
 		PageFaultsPersec: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, "proctest", "proctest_page_faults_persec"),
-			"Page Faults/s", []string{}, nil,
+			prometheus.BuildFQName(Namespace, "proctest", "page_faults_persec"),
+			"Page Faults/s",
+			[]string{"process", "process_id"},
+			nil,
 		),
 		ThreadCount: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, "proctest", "proctest_thread_count"),
-			"Thread Count", []string{}, nil,
+			prometheus.BuildFQName(Namespace, "proctest", "thread_count"),
+			"Thread Count",
+			[]string{"process", "process_id"},
+			nil,
 		),
 	}, nil
 }
 
-// Collect collects Exchange-metrics and provides them to prometheus through the ch channel
-func (c *proctestCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) error {
+// Collect collects metrics
+func (c *ProctestCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) error {
 	{
-		var data []win32_PerfRawData_PerfProc_Process
-		if err := wmi.Query(queryAll(data), &data); err != nil {
+		var procs []Win32_PerfRawData_PerfProc_Process
+		q := queryAll(procs)
+		log.Infof("Query: %s", q)
+		if err := wmi.Query(q, &procs); err != nil {
 			log.Errorf("WMI query error while collecting %s-metrics: %s", "proctest", err)
 			return err
 		}
 
-		if len(data) == 0 {
+		if len(procs) == 0 {
 			log.Errorf("Query returned 0 rows")
 			return errors.New("No rows returned")
 		}
 
-		for _, app := range data {
+		for _, proc := range procs {
+
+			if proc.Name == "_Total" {
+				continue
+			}
+
+			name := proc.Name
+			pid := strconv.FormatUint(uint64(proc.IDProcess), 10)
+
 			ch <- prometheus.MustNewConstMetric(
 				c.IOReadBytesPersec,
 				prometheus.GaugeValue,
-				float64(app.IOReadBytesPersec),
+				float64(proc.IOReadBytesPersec),
+				name,
+				pid,
 			)
 			ch <- prometheus.MustNewConstMetric(
 				c.IOWriteBytesPersec,
 				prometheus.GaugeValue,
-				float64(app.IOWriteBytesPersec),
+				float64(proc.IOWriteBytesPersec),
+				name,
+				pid,
 			)
 			ch <- prometheus.MustNewConstMetric(
 				c.PrivateBytes,
 				prometheus.GaugeValue,
-				float64(app.PrivateBytes),
+				float64(proc.PrivateBytes),
+				name,
+				pid,
 			)
 			ch <- prometheus.MustNewConstMetric(
 				c.PageFaultsPersec,
 				prometheus.GaugeValue,
-				float64(app.PageFaultsPersec),
+				float64(proc.PageFaultsPersec),
+				name,
+				pid,
 			)
 			ch <- prometheus.MustNewConstMetric(
 				c.ThreadCount,
 				prometheus.GaugeValue,
-				float64(app.ThreadCount),
+				float64(proc.ThreadCount),
+				name,
+				pid,
 			)
 		}
 	}
