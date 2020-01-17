@@ -78,6 +78,8 @@ func init() {
 // newExchangeCollector returns a new Collector
 func newExchangeCollector() (Collector, error) {
 	return &exchangeCollector{
+		//
+		// Exchange AD Access Processes
 		LDAPReadTime: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "ldap_read_time"),
 			"LDAP Read Time", []string{"name"}, nil,
@@ -97,40 +99,42 @@ func newExchangeCollector() (Collector, error) {
 		LDAPSearchesTimeLimitExceededperMinute: prometheus.NewDesc(
 			prometheus.BuildFQName(Namespace, subsystem, "ldap_searches_timed_out_per_min"),
 			"LDAP Searches Time Limit Exceeded pr minute", []string{"name"}, nil,
-		), /*
-			ExternalActiveRemoteDeliveryQueueLength: prometheus.NewDesc(
-				prometheus.BuildFQName(Namespace, subsystem, "ext_active_remote_delivery_queue"),
-				"External Active Remote Delivery Queue Length", nil, nil,
-			),
-			InternalActiveRemoteDeliveryQueueLength: prometheus.NewDesc(
-				prometheus.BuildFQName(Namespace, subsystem, "internal_active_remote_delivery_queue"),
-				"Internal Active Remote Delivery Queue Length", nil, nil,
-			),
-			ActiveMailboxDeliveryQueueLength: prometheus.NewDesc(
-				prometheus.BuildFQName(Namespace, subsystem, "active_mailbox_delivery_queue"),
-				"Active Mailbox Delivery Queue Length", nil, nil,
-			),
-			RetryMailboxDeliveryQueueLength: prometheus.NewDesc(
-				prometheus.BuildFQName(Namespace, subsystem, "retry_mailbox_delivery_queue"),
-				"Retry Mailbox Delivery Queue Length", nil, nil,
-			),
-			UnreachableQueueLength: prometheus.NewDesc(
-				prometheus.BuildFQName(Namespace, subsystem, "unreachable_queue"),
-				"Unreachable Queue Length", nil, nil,
-			),
-			ExternalLargestDeliveryQueueLength: prometheus.NewDesc(
-				prometheus.BuildFQName(Namespace, subsystem, "external_largest_delivery_queue"),
-				"External Largest Delivery Queue Length", nil, nil,
-			),
-			InternalLargestDeliveryQueueLength: prometheus.NewDesc(
-				prometheus.BuildFQName(Namespace, subsystem, "inernal_largest_delivery_queue"),
-				"Internal Largest Delivery Queue Length", nil, nil,
-			),
-			// func NewDesc(fqName, help string, variableLabels []string, constLabels Labels) *Desc {
-			PoisonQueueLength: prometheus.NewDesc(
-				prometheus.BuildFQName(Namespace, subsystem, "poison_queue"),
-				"Poison Queue Length", nil, nil,
-			),*/
+		),
+
+		//
+		// Remote Delivery Queue
+		ExternalActiveRemoteDeliveryQueueLength: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "ext_active_remote_delivery_queue"),
+			"External Active Remote Delivery Queue Length", []string{"name"}, nil,
+		),
+		InternalActiveRemoteDeliveryQueueLength: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "internal_active_remote_delivery_queue"),
+			"Internal Active Remote Delivery Queue Length", []string{"name"}, nil,
+		),
+		ActiveMailboxDeliveryQueueLength: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "active_mailbox_delivery_queue"),
+			"Active Mailbox Delivery Queue Length", []string{"name"}, nil,
+		),
+		RetryMailboxDeliveryQueueLength: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "retry_mailbox_delivery_queue"),
+			"Retry Mailbox Delivery Queue Length", []string{"name"}, nil,
+		),
+		UnreachableQueueLength: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "unreachable_queue"),
+			"Unreachable Queue Length", []string{"name"}, nil,
+		),
+		ExternalLargestDeliveryQueueLength: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "external_largest_delivery_queue"),
+			"External Largest Delivery Queue Length", []string{"name"}, nil,
+		),
+		InternalLargestDeliveryQueueLength: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "inernal_largest_delivery_queue"),
+			"Internal Largest Delivery Queue Length", []string{"name"}, nil,
+		),
+		PoisonQueueLength: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, subsystem, "poison_queue"),
+			"Poison Queue Length", []string{"name"}, nil,
+		),
 
 		invalidProcName: regexp.MustCompile(`#[0-9]{0,2}`),
 	}, nil
@@ -191,53 +195,61 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 		log.Warnln("Length of []procData is zero")
 	}
 
-	/*
-		var data []win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues
-		if err := wmi.Query(queryAll(data), &data); err != nil {
-			log.Errorf("WMI query error while collecting %s-metrics: %s", subsystem, err)
-			return err
-		}
+	var transportQueues []win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues
+	if err := wmi.Query(queryAll(transportQueues), &transportQueues); err != nil {
+		log.Errorf("WMI query error while collecting %s-metrics: %s", subsystem, err)
+		return err
+	}
 
+	for _, queue := range transportQueues {
 		ch <- prometheus.MustNewConstMetric(
 			c.ExternalActiveRemoteDeliveryQueueLength,
 			prometheus.CounterValue,
-			float64(app.ExternalActiveRemoteDeliveryQueueLength),
+			float64(queue.ExternalActiveRemoteDeliveryQueueLength),
+			queue.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.InternalActiveRemoteDeliveryQueueLength,
 			prometheus.CounterValue,
-			float64(app.InternalActiveRemoteDeliveryQueueLength),
+			float64(queue.InternalActiveRemoteDeliveryQueueLength),
+			queue.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.ActiveMailboxDeliveryQueueLength,
 			prometheus.CounterValue,
-			float64(app.ActiveMailboxDeliveryQueueLength),
+			float64(queue.ActiveMailboxDeliveryQueueLength),
+			queue.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.RetryMailboxDeliveryQueueLength,
 			prometheus.CounterValue,
-			float64(app.RetryMailboxDeliveryQueueLength),
+			float64(queue.RetryMailboxDeliveryQueueLength),
+			queue.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.UnreachableQueueLength,
 			prometheus.CounterValue,
-			float64(app.UnreachableQueueLength),
+			float64(queue.UnreachableQueueLength),
+			queue.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.ExternalLargestDeliveryQueueLength,
 			prometheus.CounterValue,
-			float64(app.ExternalLargestDeliveryQueueLength),
+			float64(queue.ExternalLargestDeliveryQueueLength),
+			queue.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.InternalLargestDeliveryQueueLength,
 			prometheus.CounterValue,
-			float64(app.InternalLargestDeliveryQueueLength),
+			float64(queue.InternalLargestDeliveryQueueLength),
+			queue.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.PoisonQueueLength,
 			prometheus.CounterValue,
-			float64(app.PoisonQueueLength),
+			float64(queue.PoisonQueueLength),
+			queue.Name,
 		)
-	*/
+	}
 	return nil
 }
