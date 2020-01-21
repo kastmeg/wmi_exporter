@@ -3,14 +3,24 @@
 package collector
 
 import (
+	"fmt"
+	"os"
 	"regexp"
+	"strings"
+	"text/tabwriter"
 
 	"github.com/StackExchange/wmi"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const subsystem string = "exchange"
+
+var (
+	tabw            *tabwriter.Writer
+	exchangeVerbose = kingpin.Flag("collector.exchange.verbose", "Be more verbose").Bool()
+)
 
 type exchangeCollector struct {
 	LDAPReadTime                            *prometheus.Desc
@@ -70,10 +80,16 @@ type win32_PerfRawData_ESE_MSExchangeDatabaseInstances struct {
 
 func init() {
 	Factories[subsystem] = newExchangeCollector
+	tabw = tabwriter.NewWriter(os.Stdout, 50, 50, 10, '.', tabwriter.AlignRight|tabwriter.Debug)
+
 }
 
 // desc creates a new prometheus description
 func desc(metricName string, labels []string, desc string) *prometheus.Desc {
+	if *exchangeVerbose {
+		fmt.Fprintf(tabw, "wmi_exchange_%-50s %-50s {%s}\n", metricName, desc, strings.Join(labels, ","))
+		tabw.Flush()
+	}
 	return prometheus.NewDesc(prometheus.BuildFQName(Namespace, subsystem, metricName), desc, labels, nil)
 }
 
