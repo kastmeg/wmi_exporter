@@ -72,83 +72,33 @@ func init() {
 	Factories[subsystem] = newExchangeCollector
 }
 
+// desc creates a new prometheus description
+func desc(metricName string, labels []string, desc string) *prometheus.Desc {
+	return prometheus.NewDesc(prometheus.BuildFQName(Namespace, subsystem, metricName), desc, labels, nil)
+}
+
 // newExchangeCollector returns a new Collector
 func newExchangeCollector() (Collector, error) {
 	return &exchangeCollector{
-		LDAPReadTime: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "ldap_read_time"),
-			"LDAP Read Time", []string{"name"}, nil,
-		),
-		LDAPSearchTime: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "ldap_search_time"),
-			"LDAP Search Time", []string{"name"}, nil,
-		),
-		LDAPTimeoutErrorsPersec: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "ldap_timeout_errors_per_sec"),
-			"LDAP Searches timeout pr minute", []string{"name"}, nil,
-		),
-		LongRunningLDAPOperationsPermin: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "ldap_long_running_ops_per_min"),
-			"Long Running LDAP operations pr minute", []string{"name"}, nil,
-		),
-		LDAPSearchesTimeLimitExceededperMinute: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "ldap_searches_timed_out_per_min"),
-			"LDAP Searches Time Limit Exceeded pr minute", []string{"name"}, nil,
-		),
-		ExternalActiveRemoteDeliveryQueueLength: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "ext_active_remote_delivery_queue"),
-			"External Active Remote Delivery Queue Length", []string{"name"}, nil,
-		),
-		InternalActiveRemoteDeliveryQueueLength: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "internal_active_remote_delivery_queue"),
-			"Internal Active Remote Delivery Queue Length", []string{"name"}, nil,
-		),
-		ActiveMailboxDeliveryQueueLength: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "active_mailbox_delivery_queue"),
-			"Active Mailbox Delivery Queue Length", []string{"name"}, nil,
-		),
-		RetryMailboxDeliveryQueueLength: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "retry_mailbox_delivery_queue"),
-			"Retry Mailbox Delivery Queue Length", []string{"name"}, nil,
-		),
-		UnreachableQueueLength: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "unreachable_queue"),
-			"Unreachable Queue Length", []string{"name"}, nil,
-		),
-		ExternalLargestDeliveryQueueLength: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "external_largest_delivery_queue"),
-			"External Largest Delivery Queue Length", []string{"name"}, nil,
-		),
-		InternalLargestDeliveryQueueLength: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "inernal_largest_delivery_queue"),
-			"Internal Largest Delivery Queue Length", []string{"name"}, nil,
-		),
-		PoisonQueueLength: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "poison_queue"),
-			"Poison Queue Length", []string{"name"}, nil,
-		),
-		IODatabaseReadsAverageLatency: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "io_db_avg_read_latency"),
-			"Average database read latency", []string{"name"}, nil,
-		),
-		IODatabaseWritesAverageLatency: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "io_db_avg_write_latency"),
-			"Average database write latency", []string{"name"}, nil,
-		),
-		IOLogWritesAverageLatency: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "io_log_writes_avg_latency"),
-			"Average Log Writes Latency", []string{"name"}, nil,
-		),
-		IODatabaseReadsRecoveryAverageLatency: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "io_db_reads_recovery_avg_latency"),
-			"Database reads recovery avrage latency", []string{"name"}, nil,
-		),
-		IODatabaseWritesRecoveryAverageLatency: prometheus.NewDesc(
-			prometheus.BuildFQName(Namespace, subsystem, "io_db_writes_recovery_avg_latency"),
-			"Database writes recovery latency", []string{"name"}, nil,
-		),
-
-		invalidProcName: regexp.MustCompile(`#[0-9]{0,2}`),
+		LDAPReadTime:                            desc("ldap_read_time", []string{"name"}, "LDAP Read Time"),
+		LDAPSearchTime:                          desc("ldap_search_time", []string{"name"}, "LDAP Search Time"),
+		LDAPTimeoutErrorsPersec:                 desc("ldap_timeout_errors_per_sec", []string{"name"}, "LDAP timeout errors per second"),
+		LongRunningLDAPOperationsPermin:         desc("ldap_long_running_ops_per_min", []string{"name"}, "Long Running LDAP operations pr minute"),
+		LDAPSearchesTimeLimitExceededperMinute:  desc("ldap_searches_timed_out_per_min", []string{"name"}, "LDAP Searches Time Limit Exceeded pr minute"),
+		ExternalActiveRemoteDeliveryQueueLength: desc("ext_active_remote_delivery_queue", []string{"name"}, "External Active Remote Delivery Queue Length"),
+		InternalActiveRemoteDeliveryQueueLength: desc("internal_active_remote_delivery_queue", []string{"name"}, "Internal Active Remote Delivery Queue Length"),
+		ActiveMailboxDeliveryQueueLength:        desc("active_mailbox_delivery_queue", []string{"name"}, "Active Mailbox Delivery Queue Length"),
+		RetryMailboxDeliveryQueueLength:         desc("retry_mailbox_delivery_queue", []string{"name"}, "Retry Mailbox Delivery Queue Length"),
+		UnreachableQueueLength:                  desc("unreachable_queue", []string{"name"}, "Unreachable Queue Length"),
+		ExternalLargestDeliveryQueueLength:      desc("external_largest_delivery_queue", []string{"name"}, "External Largest Delivery Queue Length"),
+		InternalLargestDeliveryQueueLength:      desc("inernal_largest_delivery_queue", []string{"name"}, "Internal Largest Delivery Queue Length"),
+		PoisonQueueLength:                       desc("poison_queue", []string{"name"}, "Poison Queue Length"),
+		IODatabaseReadsAverageLatency:           desc("io_db_avg_read_latency", []string{"name"}, "Average database read latency"),
+		IODatabaseWritesAverageLatency:          desc("io_db_avg_write_latency", []string{"name"}, "Average database write latency"),
+		IOLogWritesAverageLatency:               desc("io_log_writes_avg_latency", []string{"name"}, "Average Log Writes Latency"),
+		IODatabaseReadsRecoveryAverageLatency:   desc("io_db_reads_recovery_avg_latency", []string{"name"}, "Database reads recovery avrage latency"),
+		IODatabaseWritesRecoveryAverageLatency:  desc("io_db_writes_recovery_avg_latency", []string{"name"}, "Database writes recovery latency"),
+		invalidProcName:                         regexp.MustCompile(`#[0-9]{0,2}`),
 	}, nil
 }
 
@@ -199,18 +149,6 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 			proc.Name,
 		)
 	}
-
-	/*
-		Get-WmiObject -Query "select * from Win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues" | Select-Object -Property Name
-		Name
-		----
-		total excluding priority none
-		none priority
-		low priority
-		normal priority
-		high priority
-		_total
-	*/
 
 	var transportQueues []win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues
 	if err := wmi.Query(queryAll(transportQueues), &transportQueues); err != nil {
