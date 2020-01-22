@@ -96,24 +96,24 @@ func desc(metricName string, labels []string, desc string) *prometheus.Desc {
 // newExchangeCollector returns a new Collector
 func newExchangeCollector() (Collector, error) {
 	return &exchangeCollector{
-		LDAPReadTime:                            desc("ldap_read_time", []string{"name"}, "LDAP Read Time"),
-		LDAPSearchTime:                          desc("ldap_search_time", []string{"name"}, "LDAP Search Time"),
-		LDAPTimeoutErrorsPersec:                 desc("ldap_timeout_errors_per_sec", []string{"name"}, "LDAP timeout errors per second"),
-		LongRunningLDAPOperationsPermin:         desc("ldap_long_running_ops_per_min", []string{"name"}, "Long Running LDAP operations pr minute"),
-		LDAPSearchesTimeLimitExceededperMinute:  desc("ldap_searches_timed_out_per_min", []string{"name"}, "LDAP Searches Time Limit Exceeded pr minute"),
-		ExternalActiveRemoteDeliveryQueueLength: desc("ext_active_remote_delivery_queue", []string{"name"}, "External Active Remote Delivery Queue Length"),
-		InternalActiveRemoteDeliveryQueueLength: desc("internal_active_remote_delivery_queue", []string{"name"}, "Internal Active Remote Delivery Queue Length"),
-		ActiveMailboxDeliveryQueueLength:        desc("active_mailbox_delivery_queue", []string{"name"}, "Active Mailbox Delivery Queue Length"),
-		RetryMailboxDeliveryQueueLength:         desc("retry_mailbox_delivery_queue", []string{"name"}, "Retry Mailbox Delivery Queue Length"),
-		UnreachableQueueLength:                  desc("unreachable_queue", []string{"name"}, "Unreachable Queue Length"),
-		ExternalLargestDeliveryQueueLength:      desc("external_largest_delivery_queue", []string{"name"}, "External Largest Delivery Queue Length"),
-		InternalLargestDeliveryQueueLength:      desc("inernal_largest_delivery_queue", []string{"name"}, "Internal Largest Delivery Queue Length"),
-		PoisonQueueLength:                       desc("poison_queue", []string{"name"}, "Poison Queue Length"),
-		IODatabaseReadsAverageLatency:           desc("io_db_avg_read_latency", []string{"name"}, "Average database read latency"),
-		IODatabaseWritesAverageLatency:          desc("io_db_avg_write_latency", []string{"name"}, "Average database write latency"),
-		IOLogWritesAverageLatency:               desc("io_log_writes_avg_latency", []string{"name"}, "Average Log Writes Latency"),
-		IODatabaseReadsRecoveryAverageLatency:   desc("io_db_reads_recovery_avg_latency", []string{"name"}, "Database reads recovery avrage latency"),
-		IODatabaseWritesRecoveryAverageLatency:  desc("io_db_writes_recovery_avg_latency", []string{"name"}, "Database writes recovery latency"),
+		LDAPReadTime:                            desc("ldap_read_time", []string{"name"}, "LDAP Read Time"),                                                             // OK
+		LDAPSearchTime:                          desc("ldap_search_time", []string{"name"}, "LDAP Search Time"),                                                         // OK
+		LDAPTimeoutErrorsPersec:                 desc("ldap_timeout_errors_per_sec", []string{"name"}, "LDAP timeout errors per second"),                                // Ikke i wiki
+		LongRunningLDAPOperationsPermin:         desc("long_running_ldap_operations_permin", []string{"name"}, "Long Running LDAP operations pr minute"),                // OK
+		LDAPSearchesTimeLimitExceededperMinute:  desc("ldap_searches_time_limit_exceeded_per_minute", []string{"name"}, "LDAP searches time limit exceeded per minute"), // OK
+		ExternalActiveRemoteDeliveryQueueLength: desc("external_active_remote_delivery_queue_length", []string{"name"}, "External Active Remote Delivery Queue Length"), // OK
+		InternalActiveRemoteDeliveryQueueLength: desc("internal_active_remote_delivery_queue_length", []string{"name"}, "Internal Active Remote Delivery Queue Length"), // OK
+		ActiveMailboxDeliveryQueueLength:        desc("active_mailbox_delivery_queue_length", []string{"name"}, "Active Mailbox Delivery Queue Length"),
+		RetryMailboxDeliveryQueueLength:         desc("retry_mailbox_delivery_queue_length", []string{"name"}, "Retry Mailbox Delivery Queue Length"),
+		UnreachableQueueLength:                  desc("unreachable_queue_length", []string{"name"}, "Unreachable Queue Length"),
+		ExternalLargestDeliveryQueueLength:      desc("external_largest_delivery_queue_length", []string{"name"}, "External Largest Delivery Queue Length"),
+		InternalLargestDeliveryQueueLength:      desc("inernal_largest_delivery_queue_length", []string{"name"}, "Internal Largest Delivery Queue Length"),
+		PoisonQueueLength:                       desc("poison_queue_length", []string{"name"}, "Poison Queue Length"),
+		IODatabaseReadsAverageLatency:           desc("io_database_reads_average_latency", []string{"name"}, "Average database read latency"),
+		IODatabaseWritesAverageLatency:          desc("io_database_writes_average_latency", []string{"name"}, "Average database write latency"),
+		IOLogWritesAverageLatency:               desc("io_log_writes_average_latency", []string{"name"}, "Average Log Writes Latency"),
+		IODatabaseReadsRecoveryAverageLatency:   desc("io_database_reads_recovery_average_latency", []string{"name"}, "Database reads recovery avrage latency"),
+		IODatabaseWritesRecoveryAverageLatency:  desc("io_database_writes_recovery_average_latency", []string{"name"}, "Database writes recovery average latency"),
 		invalidProcName:                         regexp.MustCompile(`#[0-9]{0,2}`),
 	}, nil
 }
