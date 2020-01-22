@@ -3,24 +3,14 @@
 package collector
 
 import (
-	"fmt"
-	"os"
 	"regexp"
-	"strings"
-	"text/tabwriter"
 
 	"github.com/StackExchange/wmi"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 const subsystem string = "exchange"
-
-var (
-	tabw            *tabwriter.Writer
-	exchangeVerbose = kingpin.Flag("collector.exchange.verbose", "Be more verbose").Bool()
-)
 
 type exchangeCollector struct {
 	LDAPReadTime                            *prometheus.Desc
@@ -80,29 +70,23 @@ type win32_PerfRawData_ESE_MSExchangeDatabaseInstances struct {
 
 func init() {
 	Factories[subsystem] = newExchangeCollector
-	tabw = tabwriter.NewWriter(os.Stdout, 50, 50, 10, '.', tabwriter.AlignRight|tabwriter.Debug)
-
 }
 
 // desc creates a new prometheus description
 func desc(metricName string, labels []string, desc string) *prometheus.Desc {
-	if *exchangeVerbose {
-		fmt.Fprintf(tabw, "wmi_exchange_%-50s %-50s {%s}\n", metricName, desc, strings.Join(labels, ","))
-		tabw.Flush()
-	}
 	return prometheus.NewDesc(prometheus.BuildFQName(Namespace, subsystem, metricName), desc, labels, nil)
 }
 
 // newExchangeCollector returns a new Collector
 func newExchangeCollector() (Collector, error) {
 	return &exchangeCollector{
-		LDAPReadTime:                            desc("ldap_read_time", []string{"name"}, "LDAP Read Time"),                                                             // OK
-		LDAPSearchTime:                          desc("ldap_search_time", []string{"name"}, "LDAP Search Time"),                                                         // OK
-		LDAPTimeoutErrorsPersec:                 desc("ldap_timeout_errors_per_sec", []string{"name"}, "LDAP timeout errors per second"),                                // Ikke i wiki
-		LongRunningLDAPOperationsPermin:         desc("long_running_ldap_operations_permin", []string{"name"}, "Long Running LDAP operations pr minute"),                // OK
-		LDAPSearchesTimeLimitExceededperMinute:  desc("ldap_searches_time_limit_exceeded_per_minute", []string{"name"}, "LDAP searches time limit exceeded per minute"), // OK
-		ExternalActiveRemoteDeliveryQueueLength: desc("external_active_remote_delivery_queue_length", []string{"name"}, "External Active Remote Delivery Queue Length"), // OK
-		InternalActiveRemoteDeliveryQueueLength: desc("internal_active_remote_delivery_queue_length", []string{"name"}, "Internal Active Remote Delivery Queue Length"), // OK
+		LDAPReadTime:                            desc("ldap_read_time", []string{"name"}, "LDAP Read Time"),
+		LDAPSearchTime:                          desc("ldap_search_time", []string{"name"}, "LDAP Search Time"),
+		LDAPTimeoutErrorsPersec:                 desc("ldap_timeout_errors_per_sec", []string{"name"}, "LDAP timeout errors per second"),
+		LongRunningLDAPOperationsPermin:         desc("long_running_ldap_operations_permin", []string{"name"}, "Long Running LDAP operations pr minute"),
+		LDAPSearchesTimeLimitExceededperMinute:  desc("ldap_searches_time_limit_exceeded_per_minute", []string{"name"}, "LDAP searches time limit exceeded per minute"),
+		ExternalActiveRemoteDeliveryQueueLength: desc("external_active_remote_delivery_queue_length", []string{"name"}, "External Active Remote Delivery Queue Length"),
+		InternalActiveRemoteDeliveryQueueLength: desc("internal_active_remote_delivery_queue_length", []string{"name"}, "Internal Active Remote Delivery Queue Length"),
 		ActiveMailboxDeliveryQueueLength:        desc("active_mailbox_delivery_queue_length", []string{"name"}, "Active Mailbox Delivery Queue Length"),
 		RetryMailboxDeliveryQueueLength:         desc("retry_mailbox_delivery_queue_length", []string{"name"}, "Retry Mailbox Delivery Queue Length"),
 		UnreachableQueueLength:                  desc("unreachable_queue_length", []string{"name"}, "Unreachable Queue Length"),
@@ -114,7 +98,8 @@ func newExchangeCollector() (Collector, error) {
 		IOLogWritesAverageLatency:               desc("io_log_writes_average_latency", []string{"name"}, "Average Log Writes Latency"),
 		IODatabaseReadsRecoveryAverageLatency:   desc("io_database_reads_recovery_average_latency", []string{"name"}, "Database reads recovery avrage latency"),
 		IODatabaseWritesRecoveryAverageLatency:  desc("io_database_writes_recovery_average_latency", []string{"name"}, "Database writes recovery average latency"),
-		invalidProcName:                         regexp.MustCompile(`#[0-9]{0,2}`),
+
+		invalidProcName: regexp.MustCompile(`#[0-9]{0,2}`),
 	}, nil
 }
 
