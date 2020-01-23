@@ -15,9 +15,9 @@ const subsystem string = "exchange"
 type exchangeCollector struct {
 	LDAPReadTime                               *prometheus.Desc
 	LDAPSearchTime                             *prometheus.Desc
-	LDAPTimeoutErrorsPersec                    *prometheus.Desc
-	LongRunningLDAPOperationsPermin            *prometheus.Desc
-	LDAPSearchesTimeLimitExceededperMinute     *prometheus.Desc
+	LDAPTimeoutErrorsPerSec                    *prometheus.Desc
+	LongRunningLDAPOperationsPerMin            *prometheus.Desc
+	LDAPSearchesTimeLimitExceededPerMinute     *prometheus.Desc
 	ExternalActiveRemoteDeliveryQueueLength    *prometheus.Desc
 	InternalActiveRemoteDeliveryQueueLength    *prometheus.Desc
 	ActiveMailboxDeliveryQueueLength           *prometheus.Desc
@@ -37,18 +37,35 @@ type exchangeCollector struct {
 	MailboxServerProxyFailureRate              *prometheus.Desc
 	OutstandingProxyRequests                   *prometheus.Desc
 	ProxyRequestsPerSec                        *prometheus.Desc
-	ActiveSyncRequestsPersec                   *prometheus.Desc // name collision
+	ActiveSyncRequestsPerSec                   *prometheus.Desc
 	PingCommandsPending                        *prometheus.Desc
-	SyncCommandsPersec                         *prometheus.Desc
-	AvailabilityRequestssec                    *prometheus.Desc
+	SyncCommandsPerSec                         *prometheus.Desc
+	AvailabilityRequestsSec                    *prometheus.Desc
 	CurrentUniqueUsers                         *prometheus.Desc
-	OWARequestsPersec                          *prometheus.Desc // name collision
-	AutodiscoverRequestsPersec                 *prometheus.Desc // name collision
+	OWARequestsPerSec                          *prometheus.Desc
+	AutodiscoverRequestsPerSec                 *prometheus.Desc
 	ActiveTasks                                *prometheus.Desc
 	CompletedTasks                             *prometheus.Desc
 	QueuedTasks                                *prometheus.Desc
+	RPCAveragedLatency                         *prometheus.Desc
+	RPCRequests                                *prometheus.Desc
+	ActiveUserCount                            *prometheus.Desc
+	ConnectionCount                            *prometheus.Desc
+	RPCOperationsPerSec                        *prometheus.Desc
+	UserCount                                  *prometheus.Desc
 
 	invalidProcName *regexp.Regexp
+}
+
+type win32_PerfRawData_MSExchangeRpcClientAccess_MSExchangeRpcClientAccess struct {
+	Name string
+
+	RPCAveragedLatency  uint64
+	RPCRequests         uint64
+	ActiveUserCount     uint64
+	ConnectionCount     uint64
+	RPCOperationsPerSec uint64
+	UserCount           uint64
 }
 
 type win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses struct {
@@ -56,9 +73,9 @@ type win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses struct {
 
 	LDAPReadTime                           uint64
 	LDAPSearchTime                         uint64
-	LDAPTimeoutErrorsPersec                uint64
-	LongRunningLDAPOperationsPermin        uint64
-	LDAPSearchesTimeLimitExceededperMinute uint64
+	LDAPTimeoutErrorsPerSec                uint64
+	LongRunningLDAPOperationsPerMin        uint64
+	LDAPSearchesTimeLimitExceededPerMinute uint64
 }
 
 type win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues struct {
@@ -98,28 +115,28 @@ type win32_PerfRawData_MSExchangeHttpProxy_MSExchangeHttpProxy struct {
 type win32_PerfRawData_MSExchangeActiveSync_MSExchangeActiveSync struct {
 	Name string
 
-	RequestsPersec      uint64 // ActiveSyncRequestsPersec
+	RequestsPerSec      uint64 // ActiveSyncRequestsPerSec
 	PingCommandsPending uint64
-	SyncCommandsPersec  uint64
+	SyncCommandsPerSec  uint64
 }
 
 type win32_PerfRawData_MSExchangeAvailabilityService_MSExchangeAvailabilityService struct {
 	Name string
 
-	Requestssec uint64 // AvailabilityRequestssec TODO: Is this really correct?
+	RequestsSec uint64 // AvailabilityRequestsSec TODO: Is this really correct?
 }
 
 type win32_PerfRawData_MSExchangeOWA_MSExchangeOWA struct {
 	Name string
 
 	CurrentUniqueUsers uint64
-	RequestsPersec     uint64 // OWARequestsPersec
+	RequestsPerSec     uint64 // OWARequestsPerSec
 }
 
 type win32_PerfRawData_MSExchangeAutodiscover_MSExchangeAutodiscover struct {
 	Name string
 
-	RequestsPersec uint64 // AutodiscoverRequestsPersec
+	RequestsPerSec uint64 // AutodiscoverRequestsPerSec
 }
 
 type win32_PerfRawData_MSExchangeWorkloadManagementWorkloads_MSExchangeWorkloadManagementWorkloads struct {
@@ -144,17 +161,17 @@ func newExchangeCollector() (Collector, error) {
 	return &exchangeCollector{
 		LDAPReadTime:                               desc("ldap_read_time", []string{"name"}, "LDAP Read Time"),
 		LDAPSearchTime:                             desc("ldap_search_time", []string{"name"}, "LDAP Search Time"),
-		LDAPTimeoutErrorsPersec:                    desc("ldap_timeout_errors_per_sec", []string{"name"}, "LDAP timeout errors per second"),
-		LongRunningLDAPOperationsPermin:            desc("long_running_ldap_operations_permin", []string{"name"}, "Long Running LDAP operations pr minute"),
-		LDAPSearchesTimeLimitExceededperMinute:     desc("ldap_searches_time_limit_exceeded_per_minute", []string{"name"}, "LDAP searches time limit exceeded per minute"),
-		ExternalActiveRemoteDeliveryQueueLength:    desc("external_active_remote_delivery_queue_length", []string{"name"}, "External Active Remote Delivery Queue Length"),
-		InternalActiveRemoteDeliveryQueueLength:    desc("internal_active_remote_delivery_queue_length", []string{"name"}, "Internal Active Remote Delivery Queue Length"),
-		ActiveMailboxDeliveryQueueLength:           desc("active_mailbox_delivery_queue_length", []string{"name"}, "Active Mailbox Delivery Queue Length"),
-		RetryMailboxDeliveryQueueLength:            desc("retry_mailbox_delivery_queue_length", []string{"name"}, "Retry Mailbox Delivery Queue Length"),
-		UnreachableQueueLength:                     desc("unreachable_queue_length", []string{"name"}, "Unreachable Queue Length"),
-		ExternalLargestDeliveryQueueLength:         desc("external_largest_delivery_queue_length", []string{"name"}, "External Largest Delivery Queue Length"),
-		InternalLargestDeliveryQueueLength:         desc("inernal_largest_delivery_queue_length", []string{"name"}, "Internal Largest Delivery Queue Length"),
-		PoisonQueueLength:                          desc("poison_queue_length", []string{"name"}, "Poison Queue Length"),
+		LDAPTimeoutErrorsPerSec:                    desc("ldap_timeout_errors_per_sec", []string{"name"}, "LDAP timeout errors per second"),
+		LongRunningLDAPOperationsPerMin:            desc("long_running_ldap_operations_per_min", []string{"name"}, "Long Running LDAP operations pr minute"),
+		LDAPSearchesTimeLimitExceededPerMinute:     desc("ldap_searches_time_limit_exceeded_per_min", []string{"name"}, "LDAP searches time limit exceeded per minute"),
+		ExternalActiveRemoteDeliveryQueueLength:    desc("external_active_remote_delivery_queue_len", []string{"name"}, "External Active Remote Delivery Queue length"),
+		InternalActiveRemoteDeliveryQueueLength:    desc("internal_active_remote_delivery_queue_len", []string{"name"}, "Internal Active Remote Delivery Queue length"),
+		ActiveMailboxDeliveryQueueLength:           desc("active_mailbox_delivery_queue_len", []string{"name"}, "Active Mailbox Delivery Queue length"),
+		RetryMailboxDeliveryQueueLength:            desc("retry_mailbox_delivery_queue_len", []string{"name"}, "Retry Mailbox Delivery Queue length"),
+		UnreachableQueueLength:                     desc("unreachable_queue_len", []string{"name"}, "Unreachable Queue length"),
+		ExternalLargestDeliveryQueueLength:         desc("external_largest_delivery_queue_len", []string{"name"}, "External Largest Delivery Queue length"),
+		InternalLargestDeliveryQueueLength:         desc("inernal_largest_delivery_queue_len", []string{"name"}, "Internal Largest Delivery Queue length"),
+		PoisonQueueLength:                          desc("poison_queue_len", []string{"name"}, "Poison Queue length"),
 		IODatabaseReadsAverageLatency:              desc("io_database_reads_average_latency", []string{"name"}, "Average database read latency"),
 		IODatabaseWritesAverageLatency:             desc("io_database_writes_average_latency", []string{"name"}, "Average database write latency"),
 		IOLogWritesAverageLatency:                  desc("io_log_writes_average_latency", []string{"name"}, "Average Log Writes Latency"),
@@ -164,18 +181,24 @@ func newExchangeCollector() (Collector, error) {
 		AverageAuthenticationLatency:               desc("average_authentication_latency", []string{"name"}, "Exchange HTTP Proxy Authentication Latency (avg)"),
 		AverageClientAccessServerProcessingLatency: desc("average_client_access_server_processing_latency", []string{"name"}, "Exchange HTTP Proxy Client Access Server Processing Latency (avg)"),
 		MailboxServerProxyFailureRate:              desc("mailbox_server_proxy_failure_rate", []string{"name"}, "Exchange HTTP Proxy Mailbox Server Proxy Failure Rate"),
-		OutstandingProxyRequests:                   desc("outstanding_proxy_requests", []string{"name"}, "Exchange HTTP Proxy Outstanding Proxy Requests"),
-		ProxyRequestsPerSec:                        desc("proxy_requests_per_sec", []string{"name"}, "Exchange HTTP Proxy Requests/s"),
-		ActiveSyncRequestsPersec:                   desc("active_sync_requests_per_sec", []string{"name"}, "Active Sync requests/s "),
+		OutstandingProxyRequests:                   desc("outstanding_proxy_requests", []string{"name"}, "Exchange HTTP Proxy outstanding proxy requests"),
+		ProxyRequestsPerSec:                        desc("proxy_requests_per_sec", []string{"name"}, "Exchange HTTP Proxy requests/s"),
+		ActiveSyncRequestsPerSec:                   desc("active_sync_requests_per_sec", []string{"name"}, "Active Sync requests/s "),
 		PingCommandsPending:                        desc("ping_commands_pending", []string{"name"}, "Pending Active Sync ping-commands"),
-		SyncCommandsPersec:                         desc("sync_commands_per_sec", []string{"name"}, "Active Sync sync-commands/s"),
-		AvailabilityRequestssec:                    desc("availability_requests_per_sec", []string{"name"}, "Availability Service / Availability Requests/s (wat?)"),
+		SyncCommandsPerSec:                         desc("sync_commands_per_sec", []string{"name"}, "Active Sync sync-commands/s"),
+		AvailabilityRequestsSec:                    desc("availability_requests_per_sec", []string{"name"}, "Availability Service / Availability requests/s (wat?)"),
 		CurrentUniqueUsers:                         desc("current_unique_users", []string{"name"}, "Outlook Web Access current unique users"),
-		OWARequestsPersec:                          desc("owa_requests_per_sec", []string{"name"}, "Outlook Web Access requests/s"),
-		AutodiscoverRequestsPersec:                 desc("autodiscover_requests_per_sec", []string{"name"}, "Autodiscovery requests/s"),
+		OWARequestsPerSec:                          desc("owa_requests_per_sec", []string{"name"}, "Outlook Web Access requests/s"),
+		AutodiscoverRequestsPerSec:                 desc("autodiscover_requests_per_sec", []string{"name"}, "Autodiscovery requests/s"),
 		ActiveTasks:                                desc("active_tasks", []string{"name"}, "Active Workload Management Tasks"),
 		CompletedTasks:                             desc("completed_tasks", []string{"name"}, "Completed Workload Management Tasks"),
 		QueuedTasks:                                desc("queued_tasks", []string{"name"}, "Queued Workload Management Tasks"),
+		RPCAveragedLatency:                         desc("rpc_averaged_latency", []string{"name"}, "RPC Client Access averaged latency"),
+		RPCRequests:                                desc("rpc_requests", []string{"name"}, "RPC Client Access requests"),
+		ActiveUserCount:                            desc("active_user_count", []string{"name"}, "RPC Client Access active user count"),
+		ConnectionCount:                            desc("connection_count", []string{"name"}, "RPC Client Access connection count"),
+		RPCOperationsPerSec:                        desc("rpc_operations_per_sec", []string{"name"}, "RPC Client Access operations per sec"),
+		UserCount:                                  desc("user_count", []string{"name"}, "RPC Client Access user count"),
 
 		invalidProcName: regexp.MustCompile(`#[0-9]{0,2}`),
 	}, nil
@@ -210,21 +233,21 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 			proc.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
-			c.LDAPTimeoutErrorsPersec,
+			c.LDAPTimeoutErrorsPerSec,
 			prometheus.CounterValue,
-			float64(proc.LDAPTimeoutErrorsPersec),
+			float64(proc.LDAPTimeoutErrorsPerSec),
 			proc.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
-			c.LongRunningLDAPOperationsPermin,
+			c.LongRunningLDAPOperationsPerMin,
 			prometheus.CounterValue,
-			float64(proc.LongRunningLDAPOperationsPermin),
+			float64(proc.LongRunningLDAPOperationsPerMin),
 			proc.Name,
 		)
 		ch <- prometheus.MustNewConstMetric(
-			c.LDAPSearchesTimeLimitExceededperMinute,
+			c.LDAPSearchesTimeLimitExceededPerMinute,
 			prometheus.CounterValue,
-			float64(proc.LDAPSearchesTimeLimitExceededperMinute),
+			float64(proc.LDAPSearchesTimeLimitExceededPerMinute),
 			proc.Name,
 		)
 	}
@@ -363,9 +386,9 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 		return err
 	}
 	ch <- prometheus.MustNewConstMetric(
-		c.ActiveSyncRequestsPersec,
+		c.ActiveSyncRequestsPerSec,
 		prometheus.CounterValue,
-		float64(activesync[0].RequestsPersec), // ActiveSyncRequestsPersec
+		float64(activesync[0].RequestsPerSec), // ActiveSyncRequestsPerSec
 	)
 	ch <- prometheus.MustNewConstMetric(
 		c.PingCommandsPending,
@@ -373,9 +396,9 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 		float64(activesync[0].PingCommandsPending),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		c.SyncCommandsPersec,
+		c.SyncCommandsPerSec,
 		prometheus.CounterValue,
-		float64(activesync[0].SyncCommandsPersec),
+		float64(activesync[0].SyncCommandsPerSec),
 	)
 
 	var availservice []win32_PerfRawData_MSExchangeAvailabilityService_MSExchangeAvailabilityService
@@ -383,9 +406,9 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 		return err
 	}
 	ch <- prometheus.MustNewConstMetric(
-		c.AvailabilityRequestssec,
+		c.AvailabilityRequestsSec,
 		prometheus.CounterValue,
-		float64(availservice[0].Requestssec), // AvailabilityRequestssec TODO: Correct?
+		float64(availservice[0].RequestsSec), // AvailabilityRequestsSec TODO: Correct?
 	)
 
 	var owa []win32_PerfRawData_MSExchangeOWA_MSExchangeOWA
@@ -398,9 +421,9 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 		float64(owa[0].CurrentUniqueUsers),
 	)
 	ch <- prometheus.MustNewConstMetric(
-		c.OWARequestsPersec,
+		c.OWARequestsPerSec,
 		prometheus.CounterValue,
-		float64(owa[0].RequestsPersec), // OWARequestsPerSec
+		float64(owa[0].RequestsPerSec), // OWARequestsPerSec
 	)
 
 	var autodisc []win32_PerfRawData_MSExchangeAutodiscover_MSExchangeAutodiscover
@@ -408,9 +431,9 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 		return err
 	}
 	ch <- prometheus.MustNewConstMetric(
-		c.AutodiscoverRequestsPersec,
+		c.AutodiscoverRequestsPerSec,
 		prometheus.CounterValue,
-		float64(autodisc[0].RequestsPersec), // AutodiscoveRequestsPersec
+		float64(autodisc[0].RequestsPerSec), // AutodiscoveRequestsPerSec
 	)
 
 	var mgmtworkload []win32_PerfRawData_MSExchangeWorkloadManagementWorkloads_MSExchangeWorkloadManagementWorkloads
@@ -431,6 +454,47 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 		c.QueuedTasks,
 		prometheus.CounterValue,
 		float64(mgmtworkload[0].QueuedTasks),
+	)
+
+	var rpcCliAccess []win32_PerfRawData_MSExchangeRpcClientAccess_MSExchangeRpcClientAccess
+	if err := wmi.Query(queryAll(&rpcCliAccess), &rpcCliAccess); err != nil {
+		return err
+	}
+
+	ch <- prometheus.MustNewConstMetric(
+		c.RPCAveragedLatency,
+		prometheus.CounterValue,
+		float64(rpcCliAccess[0].RPCAveragedLatency),
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		c.RPCRequests,
+		prometheus.CounterValue,
+		float64(rpcCliAccess[0].RPCRequests),
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		c.ActiveUserCount,
+		prometheus.CounterValue,
+		float64(rpcCliAccess[0].ActiveUserCount),
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		c.ConnectionCount,
+		prometheus.CounterValue,
+		float64(rpcCliAccess[0].ConnectionCount),
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		c.RPCOperationsPerSec,
+		prometheus.CounterValue,
+		float64(rpcCliAccess[0].RPCOperationsPerSec),
+	)
+
+	ch <- prometheus.MustNewConstMetric(
+		c.UserCount,
+		prometheus.CounterValue,
+		float64(rpcCliAccess[0].UserCount),
 	)
 
 	return nil
