@@ -404,7 +404,7 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 	)
 
 	var autodisc []win32_PerfRawData_MSExchangeAutodiscover_MSExchangeAutodiscover
-	if err := wmi.Query(queryAll(&autodiscq), &autodisc); err != nil {
+	if err := wmi.Query(queryAll(&autodisc), &autodisc); err != nil {
 		return err
 	}
 	ch <- prometheus.MustNewConstMetric(
