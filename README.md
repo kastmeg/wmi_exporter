@@ -9,6 +9,7 @@ Prometheus exporter for Windows machines, using the WMI (Windows Management Inst
 
 Name     | Description | Enabled by default
 ---------|-------------|--------------------
+[exchange](docs/collector.exchange.md) | exchange |
 [ad](docs/collector.ad.md) | Active Directory Domain Services |
 [cpu](docs/collector.cpu.md) | CPU usage | &#10003;
 [cs](docs/collector.cs.md) | "Computer System" metrics (system properties, num cpus/total memory) | &#10003;

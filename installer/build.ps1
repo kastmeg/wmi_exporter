@@ -1,3 +1,4 @@
+#!/usr/bin/env powershell
 [CmdletBinding()]
 Param (
     [Parameter(Mandatory = $true)]
