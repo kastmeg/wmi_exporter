@@ -47,16 +47,12 @@ Name | Description | Type | Labels
 `wmi_exchange_external_largest_delivery_queue_len` | External Largest Delivery Queue length | gauge | name
 `wmi_exchange_inernal_largest_delivery_queue_len` | Internal Largest Delivery Queue length | gauge | name
 `wmi_exchange_poison_queue_len` | Poison Queue length | gauge | name
-
 `wmi_exchange_io_database_reads_average_latency` | Average database read latency | gauge | name
 `wmi_exchange_io_database_writes_average_latency` | Average database write latency | gauge | name
-
 `wmi_exchange_io_log_writes_average_latency` | Average Log Writes Latency | gauge | name
 `wmi_exchange_io_database_reads_recovery_average_latency` | Database reads recovery avrage latency | gauge | name
 `wmi_exchange_io_database_writes_recovery_average_latency` | Database writes recovery average latency | gauge | name
-
 `wmi_exchange_mailbox_server_locator_average_latency` | Exchange HTTP Proxy Mailbox Server Locator latency (avg) | gauge | name
-
 `wmi_exchange_average_authentication_latency` | Exchange HTTP Proxy Authentication Latency (avg) | gauge | name
 `wmi_exchange_average_client_access_server_processing_latency` | Exchange HTTP Proxy Client Access Server Processing Latency (avg) | gauge | name
 `wmi_exchange_mailbox_server_proxy_failure_rate` | Exchange HTTP Proxy Mailbox Server Proxy Failure Rate | gauge | name
