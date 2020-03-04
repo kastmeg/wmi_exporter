@@ -600,23 +600,21 @@ func (c *exchangeCollector) collectMgmtWorkloads(ch chan<- prometheus.Metric) er
 	if err := wmi.Query("SELECT * FROM "+className(data), &data); err != nil {
 		return err
 	}
-	for _, mgmtworkloads := range data {
-		ch <- prometheus.MustNewConstMetric(
-			c.ActiveTasks,
-			prometheus.GaugeValue,
-			float64(mgmtworkloads.ActiveTasks),
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.CompletedTasks,
-			prometheus.CounterValue,
-			float64(mgmtworkloads.CompletedTasks),
-		)
-		ch <- prometheus.MustNewConstMetric(
-			c.QueuedTasks,
-			prometheus.CounterValue,
-			float64(mgmtworkloads.QueuedTasks),
-		)
-	}
+	ch <- prometheus.MustNewConstMetric(
+		c.ActiveTasks,
+		prometheus.GaugeValue,
+		float64(data[0].ActiveTasks),
+	)
+	ch <- prometheus.MustNewConstMetric(
+		c.CompletedTasks,
+		prometheus.CounterValue,
+		float64(data[0].CompletedTasks),
+	)
+	ch <- prometheus.MustNewConstMetric(
+		c.QueuedTasks,
+		prometheus.CounterValue,
+		float64(data[0].QueuedTasks),
+	)
 	return nil
 }
 
