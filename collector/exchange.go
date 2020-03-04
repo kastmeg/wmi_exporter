@@ -188,7 +188,7 @@ var (
 )
 
 func init() {
-	Factories[subsystem] = newExchangeCollector
+	registerCollector("exchange", newExchangeCollector)
 }
 
 // desc creates a new prometheus description
@@ -312,9 +312,8 @@ func newExchangeCollector() (Collector, error) {
 	return &c, nil
 }
 
-// Collect collects Exchange-metrics and provides them to prometheus through the ch channel
-// func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) error { 	// Collector interface in versions > 0.7.0
-func (c *exchangeCollector) Collect(ch chan<- prometheus.Metric) error { // Collector interface in versions <= 0.7.0
+// Collect collects exchange metrics and sends them to prometheus
+func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metric) error {
 	for _, collFunc := range c.ActiveCollFuncs {
 		if err := collFunc(ch); err != nil {
 			log.Errorf("Error in %s: %s", className(collFunc), err)
