@@ -226,6 +226,7 @@ func newExchangeCollector() (Collector, error) {
 		ActiveUserCount:     desc("rpc_active_user_count", "Number of unique users that have shown some kind of activity in the last 2 minutes"),
 		ConnectionCount:     desc("rpc_connection_count", "Total number of client connections maintained"),
 		RPCOperationsPerSec: desc("rpc_ops_per_sec", "The rate (ops/s) at wich RPC operations occur"),
+		UserCount:           desc("rpc_user_count", "Number of users"),
 
 		// MS Exchange AD Access Processes
 		LDAPReadTime:                           desc("ldap_read_time", "Time (in ms) to send an LDAP read request and receive a response", "name"),
