@@ -146,29 +146,29 @@ type collectorFunc func(ch chan<- prometheus.Metric) error
 var (
 	// All available collector functions
 	exchangeAllCollectorFuncs = []string{
-		"ad_access_procs",
+		"ldap",
 		"transport_queues",
 		"database_instances",
 		"http_proxy",
-		"active_sync",
+		"activesync",
 		"availability_service",
 		"owa",
-		"auto_descover",
+		"autodiscover",
 		"management_workloads",
-		"rpc_client_access",
+		"rpc",
 	}
 
 	exchangeCollectorFuncDesc map[string]string = map[string]string{
-		"ad_access_procs":      "(WMI Class: win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses)",
+		"ldap":                 "(WMI Class: win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses)",
 		"transport_queues":     "(WMI Class: win32_PerfRawData_MSExchangeTransportQueues_MSExchangeTransportQueues)",
 		"database_instances":   "(WMI Class: win32_PerfRawData_ESE_MSExchangeDatabaseInstances)",
 		"http_proxy":           "(WMI Class: win32_PerfRawData_MSExchangeHttpProxy_MSExchangeHttpProxy)",
-		"active_sync":          "(WMI Class: win32_PerfRawData_MSExchangeActiveSync_MSExchangeActiveSync)",
+		"activesync":           "(WMI Class: win32_PerfRawData_MSExchangeActiveSync_MSExchangeActiveSync)",
 		"availability_service": "(WMI Class: win32_PerfRawData_MSExchangeAvailabilityService_MSExchangeAvailabilityService)",
 		"owa":                  "(WMI Class: win32_PerfRawData_MSExchangeOWA_MSExchangeOWA)",
-		"auto_descover":        "(WMI Class: win32_PerfRawData_MSExchangeAutodiscover_MSExchangeAutodiscover)",
+		"autodiscover":         "(WMI Class: win32_PerfRawData_MSExchangeAutodiscover_MSExchangeAutodiscover)",
 		"management_workloads": "(WMI Class: win32_PerfRawData_MSExchangeWorkloadManagementWorkloads_MSExchangeWorkloadManagementWorkloads)",
-		"rpc_client_access":    "(WMI Class: win32_PerfRawData_MSExchangeRpcClientAccess_MSExchangeRpcClientAccess)",
+		"rpc":                  "(WMI Class: win32_PerfRawData_MSExchangeRpcClientAccess_MSExchangeRpcClientAccess)",
 	}
 
 	argExchangeListAllCollectors = kingpin.Flag(
@@ -218,60 +218,79 @@ func toLabelName(name string) string {
 
 // newExchangeCollector returns a new Collector
 func newExchangeCollector() (Collector, error) {
+	// https://docs.microsoft.com/en-us/exchange/exchange-2013-performance-counters-exchange-2013-help
 	c := exchangeCollector{
-		LDAPReadTime:                               desc("ldap_read_time", "LDAP Read Time", "name"),
-		LDAPSearchTime:                             desc("ldap_search_time", "LDAP Search Time", "name"),
-		LDAPTimeoutErrorsPerSec:                    desc("ldap_timeout_errors_per_sec", "LDAP timeout errors per second", "name"),
-		LongRunningLDAPOperationsPerMin:            desc("long_running_ldap_operations_per_min", "Long Running LDAP operations pr minute", "name"),
-		LDAPSearchesTimeLimitExceededPerMinute:     desc("ldap_searches_time_limit_exceeded_per_min", "LDAP searches time limit exceeded per minute", "name"),
-		ExternalActiveRemoteDeliveryQueueLength:    desc("external_active_remote_delivery_queue_len", "External Active Remote Delivery Queue length", "name"),
-		InternalActiveRemoteDeliveryQueueLength:    desc("internal_active_remote_delivery_queue_len", "Internal Active Remote Delivery Queue length", "name"),
-		ActiveMailboxDeliveryQueueLength:           desc("active_mailbox_delivery_queue_len", "Active Mailbox Delivery Queue length", "name"),
-		RetryMailboxDeliveryQueueLength:            desc("retry_mailbox_delivery_queue_len", "Retry Mailbox Delivery Queue length", "name"),
-		UnreachableQueueLength:                     desc("unreachable_queue_len", "Unreachable Queue length", "name"),
-		ExternalLargestDeliveryQueueLength:         desc("external_largest_delivery_queue_len", "External Largest Delivery Queue length", "name"),
-		InternalLargestDeliveryQueueLength:         desc("inernal_largest_delivery_queue_len", "Internal Largest Delivery Queue length", "name"),
-		PoisonQueueLength:                          desc("poison_queue_len", "Poison Queue length", "name"),
-		IODatabaseReadsAverageLatency:              desc("io_database_reads_average_latency", "Average database read latency", "name"),
-		IODatabaseWritesAverageLatency:             desc("io_database_writes_average_latency", "Average database write latency", "name"),
-		IOLogWritesAverageLatency:                  desc("io_log_writes_average_latency", "Average Log Writes Latency", "name"),
-		IODatabaseReadsRecoveryAverageLatency:      desc("io_database_reads_recovery_average_latency", "Database reads recovery avrage latency", "name"),
-		IODatabaseWritesRecoveryAverageLatency:     desc("io_database_writes_recovery_average_latency", "Database writes recovery average latency", "name"),
-		MailboxServerLocatorAverageLatency:         desc("mailbox_server_locator_average_latency", "HTTP Proxy Mailbox Server Locator latency (avg)", "name"),
-		AverageAuthenticationLatency:               desc("average_authentication_latency", "HTTP Proxy Authentication Latency (avg)", "name"),
-		AverageClientAccessServerProcessingLatency: desc("average_client_access_server_processing_latency", "HTTP Proxy Client Access Server Processing Latency (avg)", "name"),
-		MailboxServerProxyFailureRate:              desc("mailbox_server_proxy_failure_rate", "HTTP Proxy Mailbox Server Proxy Failure Rate", "name"),
-		OutstandingProxyRequests:                   desc("outstanding_proxy_requests", "HTTP Proxy outstanding proxy requests", "name"),
-		ProxyRequestsPerSec:                        desc("proxy_requests_per_sec", "HTTP Proxy requests/s", "name"),
-		ActiveSyncRequestsPerSec:                   desc("active_sync_requests_per_sec", "Active Sync requests/s "),
-		PingCommandsPending:                        desc("ping_commands_pending", "Pending Active Sync ping-commands"),
-		SyncCommandsPerSec:                         desc("sync_commands_per_sec", "Active Sync sync-commands/s"),
-		AvailabilityRequestsSec:                    desc("availability_requests_per_sec", "Availability Service / Availability requests/s"),
-		CurrentUniqueUsers:                         desc("current_unique_users", "Outlook Web Access current unique users"),
-		OWARequestsPerSec:                          desc("owa_requests_per_sec", "Outlook Web Access requests/s"),
-		AutodiscoverRequestsPerSec:                 desc("autodiscover_requests_per_sec", "Autodiscovery requests/s"),
-		ActiveTasks:                                desc("active_tasks", "Active Workload Management Tasks"),
-		CompletedTasks:                             desc("completed_tasks", "Completed Workload Management Tasks"),
-		QueuedTasks:                                desc("queued_tasks", "Queued Workload Management Tasks"),
-		RPCAveragedLatency:                         desc("rpc_averaged_latency", "RPC Client Access averaged latency"),
-		RPCRequests:                                desc("rpc_requests", "RPC Client Access requests"),
-		ActiveUserCount:                            desc("active_user_count", "RPC Client Access active user count"),
-		ConnectionCount:                            desc("connection_count", "RPC Client Access connection count"),
-		RPCOperationsPerSec:                        desc("rpc_operations_per_sec", "RPC Client Access operations per sec"),
-		UserCount:                                  desc("user_count", "RPC Client Access user count"),
+		// MS Exchange RPC Client Access
+		RPCAveragedLatency:  desc("rpc_avg_latency", "The latency (ms), averaged for the past 1024 packets"),
+		RPCRequests:         desc("rpc_requests", "Number of client requests currently being processed by  the RPC Client Access service"),
+		ActiveUserCount:     desc("rpc_active_user_count", "Number of unique users that have shown some kind of activity in the last 2 minutes"),
+		ConnectionCount:     desc("rpc_connection_count", "Total number of client connections maintained"),
+		RPCOperationsPerSec: desc("rpc_ops_per_sec", "The rate (ops/s) at wich RPC operations occur"),
+
+		// MS Exchange AD Access Processes
+		LDAPReadTime:                           desc("ldap_read_time", "Time (in ms) to send an LDAP read request and receive a response", "name"),
+		LDAPSearchTime:                         desc("ldap_search_time", "Time (in ms) to send an LDAP search request and receive a response", "name"),
+		LDAPTimeoutErrorsPerSec:                desc("ldap_timeout_errors_per_sec", "LDAP timeout errors per second", "name"),
+		LongRunningLDAPOperationsPerMin:        desc("ldap_long_running_ops_per_min", "Long Running LDAP operations pr minute", "name"),
+		LDAPSearchesTimeLimitExceededPerMinute: desc("ldap_searches_time_limit_exceeded_per_min", "LDAP searches time limit exceeded per minute", "name"),
+
+		// MS Exchange Transport Queues
+		ExternalActiveRemoteDeliveryQueueLength: desc("transport_queues_external_active_remote_delivery", "External Active Remote Delivery Queue length", "name"),
+		InternalActiveRemoteDeliveryQueueLength: desc("transport_queues_internal_active_remote_delivery", "Internal Active Remote Delivery Queue length", "name"),
+		ActiveMailboxDeliveryQueueLength:        desc("transport_queues_active_mailbox_delivery", "Active Mailbox Delivery Queue length", "name"),
+		RetryMailboxDeliveryQueueLength:         desc("transport_queues_retry_mailbox_delivery", "Retry Mailbox Delivery Queue length", "name"),
+		UnreachableQueueLength:                  desc("transport_queues_unreachable", "Unreachable Queue length", "name"),
+		ExternalLargestDeliveryQueueLength:      desc("transport_queues_external_largest_delivery", "External Largest Delivery Queue length", "name"),
+		InternalLargestDeliveryQueueLength:      desc("transport_queues_internal_largest_delivery", "Internal Largest Delivery Queue length", "name"),
+		PoisonQueueLength:                       desc("transport_queues_poison", "Poison Queue length", "name"),
+
+		// MS Exchange Database Instances
+		IODatabaseReadsAverageLatency:          desc("iodb_reads_avg_latency", "Average time (in ms) per database read operation (<20ms)", "name"),
+		IODatabaseWritesAverageLatency:         desc("iodb_writes_avg_latency", "Average time (in ms) per database write opreation (<50ms)", "name"),
+		IOLogWritesAverageLatency:              desc("iodb_log_writes_avg_latency", "Average time (in ms) per Log write operation (<10ms)", "name"),
+		IODatabaseReadsRecoveryAverageLatency:  desc("iodb_reads_recovery_avg_latency", "Average time (in ms) per passive database read operation (<10ms)", "name"),
+		IODatabaseWritesRecoveryAverageLatency: desc("iodb_writes_recovery_avg_latency", "Average time (in ms) per passive database write operation (<200ms)", "name"),
+
+		// MS Exchange HTTP Proxy
+		MailboxServerLocatorAverageLatency:         desc("http_proxy_mailbox_server_locator_avg_latency", "Average latency (ms) of MailboxServerLocator web service calls", "name"),
+		AverageAuthenticationLatency:               desc("http_proxy_avg_auth_latency", "Average time spent authenticating CAS requests over the last 200 samples", "name"),
+		AverageClientAccessServerProcessingLatency: desc("http_proxy_avg_client_access_server_proccessing_latency", "Average latency (ms) of CAS processing time over the last 200 requests", "name"),
+		MailboxServerProxyFailureRate:              desc("http_proxy_mailbox_server_proxy_failure_rate", "Percentage of connection failures between this CAS and MBX servers over the last 200 samples", "name"),
+		OutstandingProxyRequests:                   desc("http_proxy_outstanding_proxy_requests", "Number of concurrent outstanding proxy requests", "name"),
+		ProxyRequestsPerSec:                        desc("http_proxy_requests_per_sec", "Number of proxy requests processed each second", "name"),
+
+		// MS Exchange ActiveSync
+		ActiveSyncRequestsPerSec: desc("activesync_requests_per_sec", "Number of HTTP requests received from the client via ASP.NET per second. Used to determine current user load"),
+		PingCommandsPending:      desc("activesync_ping_cmds_pending", "Number of ping commands currently pending in the queue"),
+		SyncCommandsPerSec:       desc("activesync_sync_cmds_pending", "Number of sync commands processed per second. Clients use this command to synchronize items within a folder"),
+
+		// MS Exchange Availability Service
+		AvailabilityRequestsSec: desc("avail_service_requests_per_sec", "Number of requests serviced per second"),
+
+		// MS Exchange OWA (Outlook Web App)
+		CurrentUniqueUsers: desc("owa_current_unique_users", "Number of unique users currently logged on to Outlook Web App"),
+		OWARequestsPerSec:  desc("owa_requests_per_sec", "Number of requests handled by Outlook Web App per second"),
+
+		// MS Exchange Autodiscover
+		AutodiscoverRequestsPerSec: desc("autodiscover_requests_per_sec", "Number of autodiscover service requests processed each second"),
+
+		// MS Exchange Workload Management
+		ActiveTasks:    desc("workload_active_tasks", "Number of active tasks currently running in the background for workload management"),
+		CompletedTasks: desc("workload_completed_tasks", "Number of workload management tasks that have been completed"),
+		QueuedTasks:    desc("workload_queued_tasks", "Number of workload management tasks that are currently queued up waiting to be processed"),
 	}
 
 	collectorFuncLookup := map[string]collectorFunc{
-		"ad_access_procs":      c.collectADAccessProcs,
+		"ldap":                 c.collectLDAP,
 		"transport_queues":     c.collectTransportQueues,
 		"database_instances":   c.collectDatabaseInstances,
 		"http_proxy":           c.collectHTTPProxy,
-		"active_sync":          c.collectActiveSync,
-		"availability_service": c.collectAvailService,
+		"activesync":           c.collectActiveSync,
+		"availability_service": c.collectAvailabilityService,
 		"owa":                  c.collectOWA,
-		"auto_descover":        c.collectAutoDiscover,
-		"management_workloads": c.collectMgmtWorkloads,
-		"rpc_client_access":    c.collectRPCClientAccess,
+		"autodiscover":         c.collectAutoDiscover,
+		"management_workloads": c.collectManagementWorkloads,
+		"rpc":                  c.collectRPC,
 	}
 
 	// get the disabled and enabled collectors into slices
@@ -322,7 +341,7 @@ func (c *exchangeCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Met
 	return nil
 }
 
-func (c *exchangeCollector) collectADAccessProcs(ch chan<- prometheus.Metric) error {
+func (c *exchangeCollector) collectLDAP(ch chan<- prometheus.Metric) error {
 	data := []win32_PerfRawData_MSExchangeADAccess_MSExchangeADAccessProcesses{}
 	if err := wmi.Query("SELECT * FROM "+className(data), &data); err != nil {
 		return err
@@ -545,7 +564,7 @@ func (c *exchangeCollector) collectActiveSync(ch chan<- prometheus.Metric) error
 	return nil
 }
 
-func (c *exchangeCollector) collectAvailService(ch chan<- prometheus.Metric) error {
+func (c *exchangeCollector) collectAvailabilityService(ch chan<- prometheus.Metric) error {
 	data := []win32_PerfRawData_MSExchangeAvailabilityService_MSExchangeAvailabilityService{}
 	if err := wmi.Query("SELECT * FROM "+className(data), &data); err != nil {
 		return err
@@ -595,7 +614,7 @@ func (c *exchangeCollector) collectAutoDiscover(ch chan<- prometheus.Metric) err
 	return nil
 }
 
-func (c *exchangeCollector) collectMgmtWorkloads(ch chan<- prometheus.Metric) error {
+func (c *exchangeCollector) collectManagementWorkloads(ch chan<- prometheus.Metric) error {
 	data := []win32_PerfRawData_MSExchangeWorkloadManagementWorkloads_MSExchangeWorkloadManagementWorkloads{}
 	if err := wmi.Query("SELECT * FROM "+className(data), &data); err != nil {
 		return err
@@ -618,7 +637,7 @@ func (c *exchangeCollector) collectMgmtWorkloads(ch chan<- prometheus.Metric) er
 	return nil
 }
 
-func (c *exchangeCollector) collectRPCClientAccess(ch chan<- prometheus.Metric) error {
+func (c *exchangeCollector) collectRPC(ch chan<- prometheus.Metric) error {
 	data := []win32_PerfRawData_MSExchangeRpcClientAccess_MSExchangeRpcClientAccess{}
 	if err := wmi.Query("SELECT * FROM "+className(data), &data); err != nil {
 		return err
